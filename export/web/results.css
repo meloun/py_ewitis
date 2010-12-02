@@ -1,0 +1,65 @@
+ .cistic{clear:both;}
+  h2{border-bottom:solid black 1px;} 
+  body{
+    margin:auto;
+    /*border-left:dashed 5px #ef2929;
+    border-right:dashed 5px #ef2929;*/
+    width:800px;
+    font: 12pt Verdana, Arial, Helvetica, sans-serif;
+    background:white;        
+    }  
+  #header {
+    text-align:center;
+    padding-top:5px;
+             
+  }
+    #header img{float:left; height:70px; margin:10px 50px;}
+    #header h1{text-align:left;}
+  
+  #left_panel,#right_panel{
+     padding:0.5em 1em;
+     height:500px;                   
+  }
+
+
+  
+  
+  #left_panel{
+    background:#8ae234;
+    width:350px;
+    float:left;
+    margin-left:2em;
+    clear:both;
+    
+  }
+  #right_panel{       
+    width:300px;
+    background:#fce94f;
+    float:left;}
+
+
+
+  
+  #right_panel{}
+  
+table{ font-size:140%;}
+
+td:first-child{min-width:80px;}
+td{padding:2px;}
+  
+.css_runs1 tr:first-child{font-size:120%;color:#a40000; font-weight: bold;}
+.css_runs1 tr:first-child + tr{font-weight: bold;}
+.css_runs1 tr:first-child + tr + tr{font-weight: bold;}
+
+
+.css_runs2 td{              
+  border-width:1px 0 0 0;
+  border-style:solid;
+  border-color:black;
+}
+    .css_runs2 tr:first-child,
+    .css_runs2 tr:first-child + tr,
+    .css_runs2 tr:first-child+tr+tr,
+    .css_runs2 tr:first-child+tr+tr+tr{
+        font-weight: bold;
+    }

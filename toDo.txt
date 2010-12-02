@@ -1,0 +1,16 @@
+zobecnit slot_ModelChanged(self,a,b):
+query from list a from dict...
+
+
+1. naformatovani indexu do knihovny
+	run = protokol.send_receive_frame(CMD_GET_TIME_PAR_INDEX, struct.pack('h',index))
+2. pokud neni novy zaznam prijde mi nenulova polozka error
+   send_receive vyhodi vyjimku
+
+GUI napady
+1/ po pripojeni k ewitisu, by z traye mohla vyskocit hlaska "Ewitis connected.."
+2/ filtrovani-viz priklad basic sort/filter model v items
+3/ dve tabulky se hned prepisuji, pr. Table model v sql
+
+
+   
