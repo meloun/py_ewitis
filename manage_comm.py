@@ -168,7 +168,7 @@ class ManageComm(Thread):
                 print "I: Comm: receive run: " + aux_csv_string               
                 
                 '''save to database'''
-                keys = ["state","id", "starttime_id", "datum", "name_id"]
+                keys = ["state","id", "starttime_id", "date", "name_id"]
                 values = [aux_run['state'], aux_run['id'], aux_run['starttime_id'], aux_run['datetime'], aux_run['name_id']] 
                 
                 try:

@@ -7,6 +7,7 @@
 #
 
 import sys
+import time
 import manage_comm
 from PyQt4 import QtCore, QtGui
 import ewitis.gui.Ui_App as Ui_App
@@ -17,6 +18,7 @@ import libs.myqt.myqtModel as myqtModel
 import ewitis.gui.myModel as myModel
 import ewitis.gui.RunsModel as RunsModel
 import ewitis.gui.TimesModel as TimesModel
+import ewitis.gui.myModel as myModel
 
 import libs.sqlite.sqlite as sqlite
 import ewitis.sql_queries.sql_queries as sql_queries
@@ -26,6 +28,8 @@ DEFAULT_GUI_SHARED_MEMORY = {
                              "statusbar_text": "ok",
                               "console_text":""
 }
+
+
 
     
 class wrapper_gui_ewitis(QtGui.QMainWindow):
@@ -55,8 +59,6 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #=======================================================================
         try:           
             self.db = sqlite.sqlite_db("export/sqlite/test_db.sqlite")
-            self.tableDb_times = sqlite.sqlite_table(self.db, "times")
-            self.tableDb_runs = sqlite.sqlite_table(self.db, "runs")
         
             '''connect to db'''  
             self.db.connect()
@@ -67,18 +69,22 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #=======================================================================
         # TABLES
         #=======================================================================
-        self.R = RunsModel.Runs(self.ui.RunsProxyView, self.tableDb_runs, ["id", "datum", "name_id", "description"])
+        self.R = RunsModel.Runs(self.ui.RunsProxyView, self.db, ["id", "date", "name", "description"])
         self.R.updateModel()        
-        self.T = TimesModel.Times(self.ui.TimesProxyView, self.tableDb_times,["id", "run_id", "user_id", "time_str"])
+        self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, ["id", "nr", "time", "name", "kategory", "address"])
         self.updateTimes()
         
         #=======================================================================
-        # SLOTS
+        # SIGNALS
         #=======================================================================  
         QtCore.QObject.connect(self.ui.RunsProxyView.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection, QItemSelection)"), self.sRunsProxyView_SelectionChanged)
         QtCore.QObject.connect(self.ui.aSetPort, QtCore.SIGNAL("activated()"), self.sPortSet)
+        QtCore.QObject.connect(self.ui.aRefresh, QtCore.SIGNAL("activated()"), self.sRefresh)
         QtCore.QObject.connect(self.ui.aConnectPort, QtCore.SIGNAL("activated()"), self.sPortConnect)
-        QtCore.QObject.connect(self.ui.actionAbout, QtCore.SIGNAL("activated()"), self.sAbout)        
+        QtCore.QObject.connect(self.ui.actionAbout, QtCore.SIGNAL("activated()"), self.sAbout)  
+        QtCore.QObject.connect(self.ui.aRefreshMode, QtCore.SIGNAL("activated()"), self.sRefreshMode)      
+        QtCore.QObject.connect(self.ui.aEditMode, QtCore.SIGNAL("activated()"), self.sEditMode)
+        
         self.ui.RunsFilterLineEdit.textChanged.connect(self.sRunsFilterRegExpChanged)
         self.ui.TimesFilterLineEdit.textChanged.connect(self.sTimesFilterRegExpChanged)
                       
@@ -101,7 +107,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
                                              
             #get TIMES from database & add them to the table
+            self.T.system = myModel.SYSTEM_WORKING
             self.T.update(run_id)             
+            self.T.system = myModel.SYSTEM_SLEEP
         except:
             print "I: neplatne run_id"        
 
@@ -112,8 +120,29 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
     def sRunsProxyView_SelectionChanged(self, selected, deselected):               
         if(selected):
             #print "selection changed"  
-            self.updateTimes()  #update TIMES table                                                                           
-                  
+            self.updateTimes()  #update TIMES table
+            
+    def sEditMode(self):
+        print "I: switching to editing mode.."
+        self.ui.aEditMode.setChecked(True) 
+        self.ui.aRefreshMode.setChecked(False)  
+        self.T.model.mode = myModel.MODE_EDIT           
+        self.R.model.mode = myModel.MODE_EDIT 
+        
+    def sRefreshMode(self):
+        print "I: switching to refreshing mode.."
+        self.ui.aRefreshMode.setChecked(True) 
+        self.ui.aEditMode.setChecked(False)        
+        self.T.model.mode = myModel.MODE_REFRESH          
+        self.R.model.mode = myModel.MODE_REFRESH
+              
+                     
+                                                                                           
+    def sRefresh(self):
+        print "I: refreshing.."
+        self.R.update()
+        
+        self.R.update()              
     def sPortSet(self):
         import libs.comm.serial_utils as serial_utils 
         print "GUI: aPortSet activated()"

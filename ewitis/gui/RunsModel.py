@@ -27,7 +27,7 @@ class RunsProxyModel(myModel.myProxyModel):
     
 # view <- proxymodel <- model 
 class Runs():
-    def  __init__(self, view, db_table, keys):
+    def  __init__(self, view, db, keys):
         
         #create MODEL
         self.model = RunsModel(keys)
@@ -46,13 +46,19 @@ class Runs():
         self.view.setRootIsDecorated(False)
         self.view.setAlternatingRowColors(True)        
         self.view.setSortingEnabled(True)
+        self.view.setColumnWidth(0,50)
+        self.view.setColumnWidth(1,130)
+        self.view.setColumnWidth(2,150)
+        self.view.setColumnWidth(3,100)
         
         #TIMERs
-        self.timer1s = QtCore.QTimer(); 
-        self.timer1s.start(1000);
+        self.timer1s = QtCore.QTimer() 
+        self.timer1s.start(1000)
+        
+        self.mode = myModel.MODE_EDIT  
         self.noupdate = 0 
                
-        self.db_table = db_table
+        self.db = db
         
         self.keys = keys
         
@@ -80,8 +86,9 @@ class Runs():
         self.noupdate = 20
                 
     #UPDATE TIMER    
-    def slot_Timer1s(self):
-        self.update()    #update table
+    def slot_Timer1s(self):        
+        if (self.model.mode == myModel.MODE_REFRESH): 
+            self.update()    #update table            
 
     #MODEL CHANGED        
     def slot_ModelChanged(self,a,b):
@@ -94,7 +101,7 @@ class Runs():
                 mylist.append(item.text())
                 
             #replace                         
-            self.db_table.update_from_lists(self.keys, mylist)
+            self.db.update_from_lists("runs",self.keys, mylist)
         self.noupdate = 0
         
 
@@ -119,14 +126,21 @@ class Runs():
             pass              
             
         #get RUNS from database & add them to the table                    
-        runs = self.db_table.getAll()
+        runs = self.db.getAll("runs")
         self.model.removeRows(0,self.model.rowCount())                
         for run in runs:
-            aux_items = []            
-            for key in self.keys:                            
-                if key in run.keys(): #content run this value?
-                    aux_items.append(run[key])                                                    
-            self.model.addRow(aux_items)
+            aux_items = []
+            
+            #get USER
+            user = self.db.getParX("users", "id", run["name_id"]).fetchone()             
+            
+            aux_array = [run["id"], run["date"], user["name"], run["description"]]
+            
+                            
+            #for key in self.keys:                            
+            #    if key in run.keys(): #content run this value?
+            #        aux_items.append(run[key])                                                    
+            self.model.addRow(aux_array)
             
         #selection back                           
         try: 
