@@ -6,15 +6,13 @@ from PyQt4 import QtCore, QtGui
 import ewitis.gui.myModel as myModel
 
 
-class TimesModel(myModel.myModel):
+class UsersModel(myModel.myModel):
     def __init__(self, keys):                        
         
         #create MODEL and his structure
         myModel.myModel.__init__(self, keys)
-                
-    
-    #setting flags for this model
-    #first collumn is NOT editable
+        #first collumn is NOT editable
+        
     def flags(self, index):
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
@@ -22,13 +20,14 @@ class TimesModel(myModel.myModel):
         if(self.mode == myModel.MODE_REFRESH):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
-        #id, name, kategory, addres NOT editable
-        if ((index.column() == 0) or (index.column() == 3) or (index.column() == 4) or (index.column() == 5)):
+        #id NOT editable
+        if (index.column() == 0):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-
+        
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+                
 
-class TimesProxyModel(myModel.myProxyModel):
+class UsersProxyModel(myModel.myProxyModel):
     def __init__(self):                        
         
         #create PROXYMODEL
@@ -39,14 +38,14 @@ class TimesProxyModel(myModel.myProxyModel):
 
    
 # view <- proxymodel <- model 
-class Times():
+class Users():
     def  __init__(self, view, db, keys):                
         
         #create MODEL
-        self.model = TimesModel(keys)        
+        self.model = UsersModel(keys)        
         
         #create PROXY MODEL
-        self.proxy_model = TimesProxyModel() 
+        self.proxy_model = UsersProxyModel() 
         
         
         #assign MODEL to PROXY MODEL
@@ -60,10 +59,9 @@ class Times():
         self.view.setSortingEnabled(True)
         self.view.setColumnWidth(0,50)
         self.view.setColumnWidth(1,50)
-        self.view.setColumnWidth(2,100)
-        self.view.setColumnWidth(3,120)
-        self.view.setColumnWidth(4,60)
-        self.view.setColumnWidth(5,100)
+        self.view.setColumnWidth(2,150)
+        self.view.setColumnWidth(3,150)
+        self.view.setColumnWidth(4,150)        
         
         #TIMERs
         self.timer1s = QtCore.QTimer(); 
@@ -80,13 +78,7 @@ class Times():
         self.createSlots()
         
     def createSlots(self):
-        print "I: Runs: vytvarim sloty.."
-        
-        # DOUBLE_CLICKED - nahazuje no_update aby se updatem nerusila moznost editace
-        #QtCore.QObject.connect(self.view, QtCore.SIGNAL("doubleClicked(QModelIndex)"), self.slot_Entered)
-        
-        # ACTIVATED -vznika jen u NOT editable, shazuje no_update 
-        #QtCore.QObject.connect(self.proxy_model, QtCore.SIGNAL("entered(QModelIndex)"), self.slot_Entered2)
+        print "I: Users: vytvarim sloty.."
         
         # DATA_CHANGED - zpetny zapis do DB, shozeni no_update
         QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
@@ -101,54 +93,50 @@ class Times():
     def slot_ModelChanged(self,a,b):
         
         #user change, no auto update
-        if((self.model.mode == myModel.MODE_EDIT) and (self.system == myModel.SYSTEM_SLEEP)):                  
+        if((self.model.mode == myModel.MODE_EDIT) and (self.system == myModel.SYSTEM_SLEEP)):
+                              
             #prepare data
-            aux_id = self.model.item(a.row(), 0).text()            
-            aux_time = self.model.item(a.row(), 2).text()
-            aux_nr = self.model.item(a.row(), 1).text()
+            aux_id = self.model.item(a.row(), 0).text()
+            aux_nr = self.model.item(a.row(), 1).text()            
+            aux_name = self.model.item(a.row(), 2).text()
+            aux_kategory = self.model.item(a.row(), 3).text()
+            aux_address = self.model.item(a.row(), 4).text()
             
-            #find user par nr (from user table)
-            try:            
-                aux_user = self.db.getParX("users", "nr", aux_nr).fetchone()
-                aux_dict = {"id" : aux_id, "user_id": aux_user["id"], "time_str" : aux_time}
-            except:
-                aux_dict = {"id" : aux_id, "time_str" : aux_time}
-                print "E: Times: unknown user" 
+            aux_dict = {"id" : aux_id, "nr" : aux_nr, "name" : aux_name, "kategory" : aux_kategory, "address" : aux_address}
+            print "E: Times: unknown user" 
                                                             
             #replace                         
-            self.db.update_from_dict("times", aux_dict)
+            self.db.update_from_dict("users", aux_dict)
             
-            print "replacing.. ", self.run_id, aux_dict 
+            print "I: users: replacing.. ", aux_dict 
             time.sleep(0.1)  
-            self.update(self.run_id)                    
+            self.update()                     
         
     
     #UPDATE TABLE        
-    def update(self, run_id): 
-        self.run_id = run_id                                               
-        self.updateModel(run_id)  #update model                             
+    def update(self): 
+        pass         
     
     #UPDATE TABLE        
-    def updateModel(self, run_id):           
-        
+    def updateModel(self):           
         self.system = myModel.SYSTEM_WORKING
-                               
+        
         #get TIMES from database & add them to the table
-        self.model.removeRows(0, self.model.rowCount())        
+        self.model.removeRows(0, self.model.rowCount())
+        
         try:                
-            times = self.db.getParX("times","run_id", run_id)                        
-            for time in times:
-                
-                #get USER
-                user = self.db.getParX("users", "id", time["user_id"]).fetchone()
+            users = self.db.getAll("users")                        
+            for user in users:                            
                                                              
                 #add TABLE ROW                                                             
-                aux_array = [time["id"], user['nr'], time["time_str"], user['name'], user['kategory'], user['address']]
+                aux_array = [user["id"], user['nr'], user["name"], user['kategory'], user['address']]
                 self.model.addRow(aux_array)                     
         except:
             print "I: DB: tableTimes is empty! "
             
         self.system = myModel.SYSTEM_SLEEP
+        
+        
             
             
 

@@ -15,6 +15,21 @@ class RunsModel(myModel.myModel):
         
         #create MODEL and his structure
         myModel.myModel.__init__(self, keys)
+        #setting flags for this model
+        
+    #first collumn is NOT editable
+    def flags(self, index):
+        if not index.isValid():
+            return QtCore.Qt.ItemIsEnabled
+        
+        if(self.mode == myModel.MODE_REFRESH):
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        
+        #id, name, kategory, addres NOT editable
+        if ((index.column() == 0) or (index.column() == 2)):
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+
+        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
 
 class RunsProxyModel(myModel.myProxyModel):
     def __init__(self):                        
@@ -55,10 +70,14 @@ class Runs():
         self.timer1s = QtCore.QTimer() 
         self.timer1s.start(1000)
         
-        self.mode = myModel.MODE_EDIT  
-        self.noupdate = 0 
+        #MODE EDIT/REFRESH        
+        self.system = 0 
+        
+        self.mode = myModel.MODE_EDIT           
                
         self.db = db
+        
+        
         
         self.keys = keys
         
@@ -70,20 +89,14 @@ class Runs():
                                            
     def createSlots(self):
         print "I: Runs: vytvarim sloty.."
-        QtCore.QObject.connect(self.view, QtCore.SIGNAL("doubleClicked(QModelIndex)"), self.slot_Entered)
+        #QtCore.QObject.connect(self.view, QtCore.SIGNAL("doubleClicked(QModelIndex)"), self.slot_Entered)
         QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
         QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)        
 
     
     #=======================================================================
     # SLOTS
-    #=======================================================================
-    
-    # ENTER in table
-    # by editing no update
-    def slot_Entered(self):
-        print "I: tableRuns: entered" 
-        self.noupdate = 20
+    #=======================================================================    
                 
     #UPDATE TIMER    
     def slot_Timer1s(self):        
@@ -93,31 +106,27 @@ class Runs():
     #MODEL CHANGED        
     def slot_ModelChanged(self,a,b):
         
-        if(self.noupdate != 0): #user change, no auto update              
-            mylist = []
+        if((self.model.mode == myModel.MODE_EDIT) and (self.system == myModel.SYSTEM_SLEEP)):
             
-            #take changed row
-            for item in self.model.takeRow(a.row()):                
-                mylist.append(item.text())
-                
+            #prepare data
+            aux_id = self.model.item(a.row(), 0).text()            
+            aux_date = self.model.item(a.row(), 1).text()    
+            aux_description = self.model.item(a.row(), 3).text()
+            
+            aux_dict = {"id" : aux_id, "date" : aux_date, "description" :  aux_description}
+            
             #replace                         
-            self.db.update_from_lists("runs",self.keys, mylist)
-        self.noupdate = 0
-        
+            self.db.update_from_dict("runs", aux_dict)
 
     #UPDATE TABLE        
-    def update(self):        
-        if(self.noupdate == 0):                        
-            self.updateModel()  #update model            
-        else:
-            print "I:noupdate: ",self.noupdate
-            self.noupdate = self.noupdate - 1   #now I cant update, decremet update counter 
-              
-
+    def update(self):                                        
+        self.updateModel()  #update model                                   
          
     #UPDATE MODEL
     def updateModel(self):
-                
+        
+        self.system = myModel.SYSTEM_WORKING
+        
         #ziskani oznaceneho radku z tableRuns 
         try:
             rows = self.view.selectionModel().selectedRows()         
@@ -147,8 +156,5 @@ class Runs():
             self.view.selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent) #self.tables_info['runs']['selection']            
         except:
             pass
-            
-                                
-        #selection back
-        #aux_index = self.model.index(row,0)                
-        #self.view.selectionModel().setCurrentIndex(aux_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent) #self.tables_info['runs']['selection']
+        
+        self.system = myModel.SYSTEM_SLEEP                                        

@@ -16,9 +16,12 @@ import libs.myqt.myqtTable as myqtTable
 import libs.myqt.myqtModel as myqtModel
 
 import ewitis.gui.myModel as myModel
+
+import ewitis.gui.myModel as myModel
 import ewitis.gui.RunsModel as RunsModel
 import ewitis.gui.TimesModel as TimesModel
-import ewitis.gui.myModel as myModel
+import ewitis.gui.UsersModel as UsersModel
+
 
 import libs.sqlite.sqlite as sqlite
 import ewitis.sql_queries.sql_queries as sql_queries
@@ -73,6 +76,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.R.updateModel()        
         self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, ["id", "nr", "time", "name", "kategory", "address"])
         self.updateTimes()
+        self.U = UsersModel.Users(self.ui.UsersProxyView, self.db, ["id", "nr", "name", "kategory", "address"])
+        self.U.updateModel()
         
         #=======================================================================
         # SIGNALS
@@ -87,6 +92,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         
         self.ui.RunsFilterLineEdit.textChanged.connect(self.sRunsFilterRegExpChanged)
         self.ui.TimesFilterLineEdit.textChanged.connect(self.sTimesFilterRegExpChanged)
+        self.ui.UsersFilterLineEdit.textChanged.connect(self.sUsersFilterRegExpChanged)
                       
                                                           
         #COMM
@@ -127,7 +133,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aEditMode.setChecked(True) 
         self.ui.aRefreshMode.setChecked(False)  
         self.T.model.mode = myModel.MODE_EDIT           
-        self.R.model.mode = myModel.MODE_EDIT 
+        self.R.model.mode = myModel.MODE_EDIT
+        self.U.model.mode = myModel.MODE_EDIT  
         
     def sRefreshMode(self):
         print "I: switching to refreshing mode.."
@@ -135,6 +142,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aEditMode.setChecked(False)        
         self.T.model.mode = myModel.MODE_REFRESH          
         self.R.model.mode = myModel.MODE_REFRESH
+        self.U.model.mode = myModel.MODE_REFRESH
               
                      
                                                                                            
@@ -183,6 +191,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         print "GUI: aAbout activated()"                    
         QtGui.QMessageBox.information(self, "About", "Ewitis \n (c) 2010 \n\n Clever guysClever guysClever guysClever guysClever guysClever guys")
 
+
+    
     def sRunsFilterRegExpChanged(self):
         regExp = QtCore.QRegExp(self.ui.RunsFilterLineEdit.text(),
                 QtCore.Qt.CaseInsensitive, QtCore.QRegExp.RegExp)
@@ -192,6 +202,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         regExp = QtCore.QRegExp(self.ui.TimesFilterLineEdit.text(),
                 QtCore.Qt.CaseInsensitive, QtCore.QRegExp.RegExp)
         self.T.proxy_model.setFilterRegExp(regExp)
+        
+    def sUsersFilterRegExpChanged(self):
+        regExp = QtCore.QRegExp(self.ui.UsersFilterLineEdit.text(),
+                QtCore.Qt.CaseInsensitive, QtCore.QRegExp.FixedString)
+        self.U.proxy_model.setFilterRegExp(regExp)
         
                                
                 

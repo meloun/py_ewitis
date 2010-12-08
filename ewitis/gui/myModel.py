@@ -59,6 +59,8 @@ class myProxyModel(QtGui.QSortFilterProxyModel):
         QtGui.QSortFilterProxyModel.__init__(self)
         self.setDynamicSortFilter(True)        
         self.setFilterKeyColumn(-1)
+        
+        
 
 
               
