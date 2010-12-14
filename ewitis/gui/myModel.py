@@ -11,9 +11,7 @@ class myModel(QtGui.QStandardItemModel):
     def __init__(self, keys):
         
         #model
-        QtGui.QStandardItemModel.__init__(self, 0, len(keys))
-        
-        self.mode = MODE_EDIT
+        QtGui.QStandardItemModel.__init__(self, 0, len(keys))                
         
         #model structure
         for i in range(len(keys)):        

@@ -17,6 +17,7 @@ import libs.myqt.myqtModel as myqtModel
 
 import ewitis.gui.myModel as myModel
 
+import ewitis.gui.GuiData as GuiData
 import ewitis.gui.myModel as myModel
 import ewitis.gui.RunsModel as RunsModel
 import ewitis.gui.TimesModel as TimesModel
@@ -72,11 +73,12 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #=======================================================================
         # TABLES
         #=======================================================================
-        self.R = RunsModel.Runs(self.ui.RunsProxyView, self.db, ["id", "date", "name", "description"])
+        self.GuiData = GuiData.GuiData()
+        self.R = RunsModel.Runs(self.ui.RunsProxyView, self.db, self.GuiData, ["id", "date", "name", "description"])
         self.R.updateModel()        
-        self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, ["id", "nr", "time", "name", "kategory", "address"])
+        self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, self.GuiData, ["id", "nr", "time", "name", "kategory", "address"])
         self.updateTimes()
-        self.U = UsersModel.Users(self.ui.UsersProxyView, self.db, ["id", "nr", "name", "kategory", "address"])
+        self.U = UsersModel.Users(self.ui.UsersProxyView, self.db, self.GuiData, ["id", "nr", "name", "kategory", "address"])
         self.U.updateModel()
         
         #=======================================================================
@@ -113,9 +115,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
                                              
             #get TIMES from database & add them to the table
-            self.T.system = myModel.SYSTEM_WORKING
+            self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
             self.T.update(run_id)             
-            self.T.system = myModel.SYSTEM_SLEEP
+            self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
         except:
             print "I: neplatne run_id"        
 
@@ -131,18 +133,20 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
     def sEditMode(self):
         print "I: switching to editing mode.."
         self.ui.aEditMode.setChecked(True) 
-        self.ui.aRefreshMode.setChecked(False)  
-        self.T.model.mode = myModel.MODE_EDIT           
-        self.R.model.mode = myModel.MODE_EDIT
-        self.U.model.mode = myModel.MODE_EDIT  
+        self.ui.aRefreshMode.setChecked(False)
+        self.GuiData.mode = GuiData.MODE_EDIT  
+        #self.T.model.mode = myModel.MODE_EDIT           
+        #self.R.model.mode = myModel.MODE_EDIT
+        #self.U.model.mode = myModel.MODE_EDIT  
         
     def sRefreshMode(self):
         print "I: switching to refreshing mode.."
         self.ui.aRefreshMode.setChecked(True) 
-        self.ui.aEditMode.setChecked(False)        
-        self.T.model.mode = myModel.MODE_REFRESH          
-        self.R.model.mode = myModel.MODE_REFRESH
-        self.U.model.mode = myModel.MODE_REFRESH
+        self.ui.aEditMode.setChecked(False)  
+        self.GuiData.mode = GuiData.MODE_REFRESH     
+        #self.T.model.mode = myModel.MODE_REFRESH          
+        #self.R.model.mode = myModel.MODE_REFRESH
+        #self.U.model.mode = myModel.MODE_REFRESH
               
                      
                                                                                            

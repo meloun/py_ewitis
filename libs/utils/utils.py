@@ -1,4 +1,4 @@
-'''convert integer(time in ms) to string (HH:MM:SS:mSmS)'''
+'''cconvert integer(time in ms) to string (HH:MM:SS:mSmS)'''
 def time_to_string(time):
     hours = time / (100*60*60)
     

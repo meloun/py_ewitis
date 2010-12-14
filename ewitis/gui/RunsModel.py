@@ -9,12 +9,14 @@
 import sys
 from PyQt4 import QtCore, QtGui
 import ewitis.gui.myModel as myModel
+import ewitis.gui.GuiData as GuiData
 
 class RunsModel(myModel.myModel):
-    def __init__(self, keys):                        
+    def __init__(self, guidata, keys):                        
         
         #create MODEL and his structure
         myModel.myModel.__init__(self, keys)
+        self.GuiData = guidata
         #setting flags for this model
         
     #first collumn is NOT editable
@@ -22,7 +24,7 @@ class RunsModel(myModel.myModel):
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
         
-        if(self.mode == myModel.MODE_REFRESH):
+        if(self.GuiData.mode == GuiData.MODE_REFRESH):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
         #id, name, kategory, addres NOT editable
@@ -42,10 +44,13 @@ class RunsProxyModel(myModel.myProxyModel):
     
 # view <- proxymodel <- model 
 class Runs():
-    def  __init__(self, view, db, keys):
+    def  __init__(self, view, db, guidata, keys):                
+        
+        #common Gui data
+        self.guidata = guidata
         
         #create MODEL
-        self.model = RunsModel(keys)
+        self.model = RunsModel(guidata, keys)
         #self.model.addRow(["aa","ab","vf"])
         
         #create PROXY MODEL        
@@ -75,9 +80,7 @@ class Runs():
         
         self.mode = myModel.MODE_EDIT           
                
-        self.db = db
-        
-        
+        self.db = db                
         
         self.keys = keys
         
@@ -100,13 +103,14 @@ class Runs():
                 
     #UPDATE TIMER    
     def slot_Timer1s(self):        
-        if (self.model.mode == myModel.MODE_REFRESH): 
+        if (self.guidata.mode == GuiData.MODE_REFRESH): 
             self.update()    #update table            
 
     #MODEL CHANGED        
     def slot_ModelChanged(self,a,b):
         
-        if((self.model.mode == myModel.MODE_EDIT) and (self.system == myModel.SYSTEM_SLEEP)):
+        #user change, no auto update
+        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):
             
             #prepare data
             aux_id = self.model.item(a.row(), 0).text()            
@@ -123,9 +127,10 @@ class Runs():
         self.updateModel()  #update model                                   
          
     #UPDATE MODEL
+    #automaticky update, nahazuje se SYSTEM_WORKING aby nereagoval ModelChanged
     def updateModel(self):
         
-        self.system = myModel.SYSTEM_WORKING
+        self.guidata.user_actions = GuiData.ACTIONS_DISABLE
         
         #ziskani oznaceneho radku z tableRuns 
         try:
@@ -157,4 +162,4 @@ class Runs():
         except:
             pass
         
-        self.system = myModel.SYSTEM_SLEEP                                        
+        self.guidata.user_actions = GuiData.ACTIONS_ENABLE                                        

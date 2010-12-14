@@ -4,20 +4,22 @@ import sys
 import time
 from PyQt4 import QtCore, QtGui
 import ewitis.gui.myModel as myModel
+import ewitis.gui.GuiData as GuiData
 
 
 class UsersModel(myModel.myModel):
-    def __init__(self, keys):                        
+    def __init__(self, guidata, keys):                        
         
         #create MODEL and his structure
         myModel.myModel.__init__(self, keys)
-        #first collumn is NOT editable
+        self.GuiData = guidata
         
+    #first collumn is NOT editable      
     def flags(self, index):
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
         
-        if(self.mode == myModel.MODE_REFRESH):
+        if(self.GuiData.mode == GuiData.MODE_REFRESH):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
         #id NOT editable
@@ -39,10 +41,13 @@ class UsersProxyModel(myModel.myProxyModel):
    
 # view <- proxymodel <- model 
 class Users():
-    def  __init__(self, view, db, keys):                
+    def  __init__(self, view, db, guidata, keys):                
+        
+        #common Gui data
+        self.guidata = guidata
         
         #create MODEL
-        self.model = UsersModel(keys)        
+        self.model = UsersModel(guidata, keys)        
         
         #create PROXY MODEL
         self.proxy_model = UsersProxyModel() 
@@ -93,7 +98,7 @@ class Users():
     def slot_ModelChanged(self,a,b):
         
         #user change, no auto update
-        if((self.model.mode == myModel.MODE_EDIT) and (self.system == myModel.SYSTEM_SLEEP)):
+        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):
                               
             #prepare data
             aux_id = self.model.item(a.row(), 0).text()
@@ -110,7 +115,7 @@ class Users():
             
             print "I: users: replacing.. ", aux_dict 
             time.sleep(0.1)  
-            self.update()                     
+            self.updateModel()                     
         
     
     #UPDATE TABLE        
@@ -119,7 +124,8 @@ class Users():
     
     #UPDATE TABLE        
     def updateModel(self):           
-        self.system = myModel.SYSTEM_WORKING
+        
+        self.guidata.user_actions = GuiData.ACTIONS_DISABLE
         
         #get TIMES from database & add them to the table
         self.model.removeRows(0, self.model.rowCount())
@@ -134,7 +140,7 @@ class Users():
         except:
             print "I: DB: tableTimes is empty! "
             
-        self.system = myModel.SYSTEM_SLEEP
+        self.guidata.user_actions = GuiData.ACTIONS_ENABLE
         
         
             

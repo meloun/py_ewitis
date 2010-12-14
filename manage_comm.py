@@ -82,8 +82,8 @@ class ManageComm(Thread):
         #=======================================================================
         try:           
             self.db = sqlite.sqlite_db("export/sqlite/test_db.sqlite")
-            self.tableTimes = sqlite.sqlite_table(self.db, "times")
-            self.tableRuns = sqlite.sqlite_table(self.db, "runs")
+            #self.tableTimes = sqlite.sqlite_table(self.db, "times")
+            #self.tableRuns = sqlite.sqlite_table(self.db, "runs")
         
             '''connect to db'''  
             self.db.connect()
@@ -145,7 +145,8 @@ class ManageComm(Thread):
                 values = [aux_time['state'], aux_time['id'],aux_time['run_id'], aux_time['user_id'], aux_time['cell'], aux_time['time'], aux_time['time_str']]
                 
                 try: 
-                    self.tableTimes.insert_from_lists(keys, values)
+                    #self.tableTimes.insert_from_lists(keys, values)
+                    self.insert_from_lists("times", keys, values)
                 except sqlite3.IntegrityError:
                     print "I: DB: Time already exist"                                                    
                 
@@ -172,7 +173,8 @@ class ManageComm(Thread):
                 values = [aux_run['state'], aux_run['id'], aux_run['starttime_id'], aux_run['datetime'], aux_run['name_id']] 
                 
                 try:
-                    self.tableRuns.insert_from_lists(keys, values)
+                    #self.tableRuns.insert_from_lists(keys, values)
+                    self.insert_from_lists("runs", keys, values)
                 except sqlite3.IntegrityError:
                     print "I: DB: run already exist"   
                                 

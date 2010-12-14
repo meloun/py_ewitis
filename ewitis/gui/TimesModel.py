@@ -4,13 +4,15 @@ import sys
 import time
 from PyQt4 import QtCore, QtGui
 import ewitis.gui.myModel as myModel
+import ewitis.gui.GuiData as GuiData
 
 
 class TimesModel(myModel.myModel):
-    def __init__(self, keys):                        
+    def __init__(self, guidata, keys):                        
         
         #create MODEL and his structure
         myModel.myModel.__init__(self, keys)
+        self.GuiData = guidata
                 
     
     #setting flags for this model
@@ -19,7 +21,7 @@ class TimesModel(myModel.myModel):
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
         
-        if(self.mode == myModel.MODE_REFRESH):
+        if(self.GuiData.mode == GuiData.MODE_REFRESH):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
         #id, name, kategory, addres NOT editable
@@ -40,10 +42,13 @@ class TimesProxyModel(myModel.myProxyModel):
    
 # view <- proxymodel <- model 
 class Times():
-    def  __init__(self, view, db, keys):                
+    def  __init__(self, view, db, guidata, keys):                
+        
+        #common Gui data
+        self.guidata = guidata
         
         #create MODEL
-        self.model = TimesModel(keys)        
+        self.model = TimesModel(guidata, keys)        
         
         #create PROXY MODEL
         self.proxy_model = TimesProxyModel() 
@@ -101,7 +106,7 @@ class Times():
     def slot_ModelChanged(self,a,b):
         
         #user change, no auto update
-        if((self.model.mode == myModel.MODE_EDIT) and (self.system == myModel.SYSTEM_SLEEP)):                  
+        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                  
             #prepare data
             aux_id = self.model.item(a.row(), 0).text()            
             aux_time = self.model.item(a.row(), 2).text()
@@ -131,7 +136,8 @@ class Times():
     #UPDATE TABLE        
     def updateModel(self, run_id):           
         
-        self.system = myModel.SYSTEM_WORKING
+        #self.system = myModel.SYSTEM_WORKING
+        self.guidata.user_actions = GuiData.ACTIONS_DISABLE
                                
         #get TIMES from database & add them to the table
         self.model.removeRows(0, self.model.rowCount())        
@@ -148,7 +154,8 @@ class Times():
         except:
             print "I: DB: tableTimes is empty! "
             
-        self.system = myModel.SYSTEM_SLEEP
+        #self.system = myModel.SYSTEM_SLEEP
+        self.guidata.user_actions = GuiData.ACTIONS_ENABLE
             
             
 
