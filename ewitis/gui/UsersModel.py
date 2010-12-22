@@ -98,8 +98,8 @@ class Users():
     def slot_ModelChanged(self,a,b):
         
         #user change, no auto update
-        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):
-                              
+        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                                          
+            
             #prepare data
             aux_id = self.model.item(a.row(), 0).text()
             aux_nr = self.model.item(a.row(), 1).text()            
@@ -110,8 +110,11 @@ class Users():
             aux_dict = {"id" : aux_id, "nr" : aux_nr, "name" : aux_name, "kategory" : aux_kategory, "address" : aux_address}
             print "E: Times: unknown user" 
                                                             
-            #replace                         
-            self.db.update_from_dict("users", aux_dict)
+            #replace
+            try:                         
+                self.db.update_from_dict("users", aux_dict)
+            except:
+                QtGui.QMessageBox.information(self.view, "Error", "User with this number already exist!")
             
             print "I: users: replacing.. ", aux_dict 
             time.sleep(0.1)  

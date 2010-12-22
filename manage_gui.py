@@ -119,7 +119,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             self.T.update(run_id)             
             self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
         except:
-            print "I: neplatne run_id"        
+            print "I: Times: nelze aktualizovat!"        
 
          
     #=======================================================================

@@ -146,15 +146,19 @@ class Runs():
             aux_items = []
             
             #get USER
-            user = self.db.getParX("users", "id", run["name_id"]).fetchone()             
+            user = self.db.getParX("users", "id", run["name_id"]).fetchone()
             
-            aux_array = [run["id"], run["date"], user["name"], run["description"]]
+            try:
+                aux_array = [run["id"], run["date"], user["name"], run["description"]]
+                #for key in self.keys:                            
+                #    if key in run.keys(): #content run this value?
+                #        aux_items.append(run[key])                                                    
+                self.model.addRow(aux_array)
+            except:
+                print "E: Runs: Beh nelze pridat", run["id"]
             
                             
-            #for key in self.keys:                            
-            #    if key in run.keys(): #content run this value?
-            #        aux_items.append(run[key])                                                    
-            self.model.addRow(aux_array)
+
             
         #selection back                           
         try: 

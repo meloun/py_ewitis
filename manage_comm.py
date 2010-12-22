@@ -90,10 +90,10 @@ class ManageComm(Thread):
         except:
             print "E: Database"
             
-        query = sql_queries.get_query_times_par_id(152)
-        res = self.db.query(query)
-        for item in res:
-            print item 
+        #query = sql_queries.get_query_times_par_id(152)
+        #res = self.db.query(query)
+        #for item in res:
+        #    print item 
                                                                                            
         while(1):
                                   
@@ -146,7 +146,7 @@ class ManageComm(Thread):
                 
                 try: 
                     #self.tableTimes.insert_from_lists(keys, values)
-                    self.insert_from_lists("times", keys, values)
+                    self.db.insert_from_lists("times", keys, values)
                 except sqlite3.IntegrityError:
                     print "I: DB: Time already exist"                                                    
                 
@@ -174,7 +174,7 @@ class ManageComm(Thread):
                 
                 try:
                     #self.tableRuns.insert_from_lists(keys, values)
-                    self.insert_from_lists("runs", keys, values)
+                    self.db.insert_from_lists("runs", keys, values)
                 except sqlite3.IntegrityError:
                     print "I: DB: run already exist"   
                                 

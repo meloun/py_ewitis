@@ -56,8 +56,8 @@ class sqlite_db(object):
         
         '''sestaveni a provedeni dotazu'''
         query = "insert into %s(%s) values(%s)" % (tablename, keys_str, values_str)
-        res = self.db.query(query)
-        self.db.commit()
+        res = self.query(query)
+        self.commit()
         return res
     
     '''vlozeni jednoho zaznamu z dict'''
