@@ -87,6 +87,8 @@ class sqlite_db(object):
     
     ###########
     # UPDATE
+    # - update users SET  kategory="Kat D", nr="4" WHERE id = "4"
+    # - record has to exist
     ###########
     def update_from_lists(self, tablename, keys, values):
         

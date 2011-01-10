@@ -14,10 +14,12 @@ import ewitis.gui.Ui_App as Ui_App
 import ewitis.gui.myModel as myModel
 import libs.myqt.myqtTable as myqtTable
 import libs.myqt.myqtModel as myqtModel
+import libs.db_csv.db_csv as Db_csv
 
 import ewitis.gui.myModel as myModel
 
 import ewitis.gui.GuiData as GuiData
+import ewitis.gui.Ui_Slots as Ui_Slots
 import ewitis.gui.myModel as myModel
 import ewitis.gui.RunsModel as RunsModel
 import ewitis.gui.TimesModel as TimesModel
@@ -79,7 +81,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, self.GuiData, ["id", "nr", "time", "name", "kategory", "address"])
         self.updateTimes()
         self.U = UsersModel.Users(self.ui.UsersProxyView, self.db, self.GuiData, ["id", "nr", "name", "kategory", "address"])
-        self.U.updateModel()
+        self.U.model.update()
         
         #=======================================================================
         # SIGNALS
@@ -92,16 +94,38 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.aRefreshMode, QtCore.SIGNAL("activated()"), self.sRefreshMode)      
         QtCore.QObject.connect(self.ui.aEditMode, QtCore.SIGNAL("activated()"), self.sEditMode)
         
-        self.ui.RunsFilterLineEdit.textChanged.connect(self.sRunsFilterRegExpChanged)
-        self.ui.TimesFilterLineEdit.textChanged.connect(self.sTimesFilterRegExpChanged)
-        self.ui.UsersFilterLineEdit.textChanged.connect(self.sUsersFilterRegExpChanged)
-                      
-                                                          
+        #SIGNALs & SLOTs
+        #class for adding and manage signals and slots
+        AddSignal =  Ui_Slots.AddSignal(self)       
+        
+        AddSignal.table(self.R, 
+                self.ui.RunsFilterLineEdit, self.ui.RunsFilterClear,
+                self.ui.RunsImport, self.ui.RunsImport,
+                self.ui.RunsExport, self.ui.RunsImport, 
+                self.ui.RunsDelete)
+        
+        AddSignal.table(self.T, 
+                        self.ui.TimesFilterLineEdit, self.ui.TimesFilterClear,
+                        self.ui.TimesImport, self.ui.TimesImport,
+                        self.ui.TimesExport, self.ui.TimesImport, 
+                        self.ui.TimesDelete)
+        
+        AddSignal.table(self.U, 
+                self.ui.UsersFilterLineEdit, self.ui.UsersFilterClear,
+                self.ui.UsersImport, self.ui.UsersImport,
+                self.ui.UsersExport, self.ui.UsersImport, 
+                self.ui.UsersDelete)      
+                                                                  
         #COMM
         self.ShaMem_comm = ShaMem_comm                
                        
         self.myManageComm = manage_comm.ManageComm(ShaMem_comm = self.ShaMem_comm) #COMM instance
-        self.myManageComm.start() #start thread, 'run' flag should be 0, so this thread ends immediatelly                                                            
+        self.myManageComm.start() #start thread, 'run' flag should be 0, so this thread ends immediatelly
+        
+    def ehm(self):
+        print "mandolin"    
+    def __del__(self):
+        print "GUI: mazu instanci.."                                                              
 
     # UPDATE TIMES
     # function for update table TIMES according to selection in RUNS
@@ -119,7 +143,16 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             self.T.update(run_id)             
             self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
         except:
-            print "I: Times: nelze aktualizovat!"        
+            print "I: Times: nelze aktualizovat!"    
+         
+    def start(self):
+        self.app = QtGui.QApplication(sys.argv)
+        self.myapp = wrapper_gui_ewitis()
+        self.myapp.show()    
+        sys.exit(self.app.exec_())
+                
+    def updateShM(self):
+        self.ShaMem_comm["port"] = str(self.ui.aSetPort.text())         
 
          
     #=======================================================================
@@ -138,6 +171,35 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #self.T.model.mode = myModel.MODE_EDIT           
         #self.R.model.mode = myModel.MODE_EDIT
         #self.U.model.mode = myModel.MODE_EDIT  
+        
+    
+    def sImportRuns(self):
+        pass         
+    def sImportTimes(self):
+        pass
+     
+    #tlacitko pro import uzivatelu
+    #WEB - id, kategorie, prijmeni, jmeno, adresa,.. 
+    #DB - id, nr, name, kategory, address 
+    def sImportUsers(self):        
+                
+        #import       
+        state = self.U.importCsv("Blizak_2010.csv")
+        self.sImportDialog(state)
+    
+                       
+    def sImportDialog(self, state):               
+        #error message
+        title = "Import"
+        if(state['ko'] != 0) :                                               
+            message = str(state['ko'])+" record(s) NOT succesfully imported.\n\n Probably already exist."
+            QtGui.QMessageBox.warning(self, title, message)
+        else:
+            message = str(state['ok'])+" record(s) succesfully imported."
+            QtGui.QMessageBox.information(self, title, message)            
+        self.ui.statusbar.showMessage(title+" : " + message)        
+                      
+        
         
     def sRefreshMode(self):
         print "I: switching to refreshing mode.."
@@ -188,44 +250,10 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             self.ui.aSetPort.setEnabled(False)
             self.ui.aConnectPort.setText("Disconnect")             
         print "GUI: ",self.ShaMem_comm["run"]
-
-        
         
     def sAbout(self):
         print "GUI: aAbout activated()"                    
-        QtGui.QMessageBox.information(self, "About", "Ewitis \n (c) 2010 \n\n Clever guysClever guysClever guysClever guysClever guysClever guys")
-
-
-    
-    def sRunsFilterRegExpChanged(self):
-        regExp = QtCore.QRegExp(self.ui.RunsFilterLineEdit.text(),
-                QtCore.Qt.CaseInsensitive, QtCore.QRegExp.RegExp)
-        self.R.proxy_model.setFilterRegExp(regExp)
-    
-    def sTimesFilterRegExpChanged(self):
-        regExp = QtCore.QRegExp(self.ui.TimesFilterLineEdit.text(),
-                QtCore.Qt.CaseInsensitive, QtCore.QRegExp.RegExp)
-        self.T.proxy_model.setFilterRegExp(regExp)
-        
-    def sUsersFilterRegExpChanged(self):
-        regExp = QtCore.QRegExp(self.ui.UsersFilterLineEdit.text(),
-                QtCore.Qt.CaseInsensitive, QtCore.QRegExp.FixedString)
-        self.U.proxy_model.setFilterRegExp(regExp)
-        
-                               
-                
-    def __del__(self):
-        print "GUI: mazu instanci.."  
-         
-    def start(self):
-        self.app = QtGui.QApplication(sys.argv)
-        self.myapp = wrapper_gui_ewitis()
-        self.myapp.show()    
-        sys.exit(self.app.exec_())
-                
-    def updateShM(self):
-        self.ShaMem_comm["port"] = str(self.ui.aSetPort.text())       
-
+        QtGui.QMessageBox.information(self, "About", "Ewitis \n (c) 2010 \n\n Clever guysClever guysClever guysClever guysClever guysClever guys")                                                
 
 class manage_gui():
     def __init__(self):

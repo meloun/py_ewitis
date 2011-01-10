@@ -50,8 +50,7 @@ class Runs():
         self.guidata = guidata
         
         #create MODEL
-        self.model = RunsModel(guidata, keys)
-        #self.model.addRow(["aa","ab","vf"])
+        self.model = RunsModel(guidata, keys)        
         
         #create PROXY MODEL        
         self.proxy_model = RunsProxyModel()

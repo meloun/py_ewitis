@@ -4,6 +4,7 @@ import sys
 from PyQt4 import Qt, QtCore, QtGui
 
 
+TABLE_RUNS, TABLE_TIMES, TABLE_USERS = range(3)
 MODE_EDIT, MODE_REFRESH = range(2)
 SYSTEM_SLEEP, SYSTEM_WORKING = range(2)
     
