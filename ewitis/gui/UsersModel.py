@@ -8,21 +8,16 @@ import ewitis.gui.GuiData as GuiData
 import libs.db_csv.db_csv as Db_csv
 
 
+
+
 class UsersModel(myModel.myModel):
-    def __init__(self, db, guidata, keys):                        
+    def __init__(self, view, name, db, guidata, keys):                        
         
         #create MODEL and his structure
-        myModel.myModel.__init__(self, keys)
-        self.db  = db
-        self.guidata = guidata
-        self.update()
-        
-        QtCore.QObject.connect(self, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
-    
-    #MODEL CHANGED
-    #zmenil se model -> save to DB        
-    def slot_ModelChanged(self,a,b):
-        print "modelo modelovic"
+        myModel.myModel.__init__(self, view, name, db, guidata, keys)
+
+        self.update()                    
+
         
     #first collumn is NOT editable      
     def flags(self, index):
@@ -38,24 +33,23 @@ class UsersModel(myModel.myModel):
         
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
     
-    #update model from DB
-    def update(self):
+    #"id", "nr", "name", "kategory", "address"
+    def db2tableRow(self, dbUser):                                        
         
-        self.guidata.user_actions = GuiData.ACTIONS_DISABLE
         
-        #get TIMES from database & add them to the table
-        self.removeRows(0, self.rowCount())        
-        try:                
-            users = self.db.getAll("users")                        
-            for user in users:                            
-                                                             
-                #add ROW                                                             
-                aux_array = [user["id"], user['nr'], user["name"], user['kategory'], user['address']]
-                self.addRow(aux_array)                     
-        except:
-            print "I: DB: tableTimes is empty! "
-            
-        self.guidata.user_actions = GuiData.ACTIONS_ENABLE
+        tabUser = {}
+        tabUser['id'] = dbUser['id']
+        tabUser['nr'] = dbUser['nr']
+        tabUser['name'] = dbUser['name']
+        tabUser['kategory'] = dbUser['kategory']
+        tabUser['address'] = dbUser['address']
+                                
+        return tabUser
+    
+    def table2dbRow(self, tabUser): 
+        dbUser = {"id" : tabUser['id'], "nr" : tabUser['nr'], "name" :  tabUser['name'], "kategory" :  tabUser['kategory'], "address" : tabUser['address']}                                                                       
+        return dbUser    
+ 
         
                 
 
@@ -67,14 +61,60 @@ class UsersProxyModel(myModel.myProxyModel):
         
 
 
-
-   
 # view <- proxymodel <- model 
-class Users():
+class Users(myModel.myTable):
+    def  __init__(self, name, view, db, guidata, keys):                
+                
+        #create MODEL
+        self.model = UsersModel(view, name, db, guidata, keys)        
+        
+        #create PROXY MODEL
+        self.proxy_model = UsersProxyModel() 
+        
+        myModel.myTable.__init__(self, name, view, db, guidata, keys)
+        
+        
+        #assign MODEL to PROXY MODEL
+        #self.proxy_model.setSourceModel(self.model)
+        
+        #assign PROXY MODEL to VIEW
+        self.view = view 
+        self.view.setModel(self.proxy_model)
+        self.view.setRootIsDecorated(False)
+        self.view.setAlternatingRowColors(True)        
+        self.view.setSortingEnabled(True)
+        self.view.setColumnWidth(0,50)
+        self.view.setColumnWidth(1,50)
+        self.view.setColumnWidth(2,150)
+        self.view.setColumnWidth(3,150)
+        self.view.setColumnWidth(4,150)        
+        
+        #TIMERs
+        self.timer1s = QtCore.QTimer(); 
+        self.timer1s.start(1000);
+        
+        #MODE EDIT/REFRESH        
+        #self.mode = myModel.MODE_REFRESH
+               
+        #self.db = db
+        
+        #self.keys = keys
+        
+        #self.model.update()        
+        #self.createSlots()
+        
+       
+# view <- proxymodel <- model 
+class Users_old(myModel.myTable):
     def  __init__(self, view, db, guidata, keys):                
         
+        myModel.myTable.__init__(self, view, db, guidata, keys)
+        
+        #name
+        self.name = "Users"
+        
         #common Gui data
-        self.guidata = guidata
+        #self.guidata = guidata
         
         #create MODEL
         self.model = UsersModel(db, guidata, keys)        
@@ -117,7 +157,7 @@ class Users():
         
         QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
         # DATA_CHANGED - zpetny zapis do DB, shozeni no_update
-        QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
+        #QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
                
     #=======================================================================
     # SLOTS
@@ -130,7 +170,7 @@ class Users():
         
     #MODEL CHANGED
     #zmenil se model -> save to DB        
-    def slot_ModelChanged(self,a,b):
+    def slot_ModelChanged_old(self,a,b):
         
         #user change, no auto update
         if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                                          
@@ -159,27 +199,41 @@ class Users():
     #DB - id, nr, name, kategory, address 
     def importCsv(self, filename):
         
-        #create DB
-        aux_db = Db_csv.Db_csv(filename)
-        users =  aux_db.load_from_file()
+        #create DB        
+        aux_csv = Db_csv.Db_csv(filename)
+        users =  aux_csv.load()
         
         #counters
         state = {'ko':0, 'ok':0}        
             
         for user in users:
-                               
+                                           
             #prepare dict in SQL format
-            user_db = { 'id': user[0], 'nr': user[0], 'name': user[2], 'kategory': user[1], 'address' : user[4]}                                    
+            user_db = { 'id': user[0], 'nr': user[0], 'name': user[2], 'kategory': user[1], 'address' : user[4]}
+            
+            #print user_db                                                 
             
             #ADD USER
-            try:
-                self.U.db.insert_from_dict("users", user_db)
+            try:            
+                self.db.insert_from_dict("users", user_db)
                 state['ok'] += 1
+            
             except:
                 state['ko'] += 1 #increment errors for error message
+
+        self.db.commit()                
         self.model.update()
         
-        return state    
+        return state 
+    
+    def delete(self):
+        self.db.delete("users")
+        self.model.update()
+        
+    def deleteAll(self):
+        self.db.deleteAll("users")
+        self.model.update()
+               
                 
     
     #UPDATE TABLE        

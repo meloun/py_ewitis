@@ -12,19 +12,20 @@ import ewitis.gui.myModel as myModel
 import ewitis.gui.GuiData as GuiData
 
 class RunsModel(myModel.myModel):
-    def __init__(self, guidata, keys):                        
+    def __init__(self, view, name, db, guidata, keys):                        
         
         #create MODEL and his structure
-        myModel.myModel.__init__(self, keys)
-        self.GuiData = guidata
-        #setting flags for this model
+        myModel.myModel.__init__(self, view, name, db, guidata, keys)
         
+        self.update() 
+                
+    #setting flags for this model        
     #first collumn is NOT editable
     def flags(self, index):
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
         
-        if(self.GuiData.mode == GuiData.MODE_REFRESH):
+        if(self.guidata.mode == GuiData.MODE_REFRESH):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
         #id, name, kategory, addres NOT editable
@@ -32,6 +33,26 @@ class RunsModel(myModel.myModel):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+        
+    def db2tableRow(self, run):                        
+        
+        #get USER
+        user = self.db.getParX("users", "id", run["name_id"]).fetchone()
+        
+        #exist user?
+        if user == None:
+            run['name']='unknown'
+        #exist => restrict username                
+        else:
+            if(user['name']==''):
+                run['name'] = 'nobody'
+            run['name'] = user['name']
+                                
+        return run
+    
+    def table2dbRow(self, run_table): 
+        run_db = {"id" : run_table['id'], "date" : run_table['date'], "description" :  run_table['description']}                                                                       
+        return run_db
 
 class RunsProxyModel(myModel.myProxyModel):
     def __init__(self):                        
@@ -43,23 +64,22 @@ class RunsProxyModel(myModel.myProxyModel):
         
     
 # view <- proxymodel <- model 
-class Runs():
-    def  __init__(self, view, db, guidata, keys):                
-        
-        #common Gui data
-        self.guidata = guidata
+class Runs(myModel.myTable):
+    def  __init__(self, name, view, db, guidata, keys):                        
         
         #create MODEL
-        self.model = RunsModel(guidata, keys)        
+        self.model = RunsModel(view, name, db, guidata, keys)        
         
         #create PROXY MODEL        
         self.proxy_model = RunsProxyModel()
         
+        myModel.myTable.__init__(self, name, view, db, guidata, keys)
+        
         
         #assign MODEL to PROXY MODEL
-        self.proxy_model.setSourceModel(self.model)
+        #self.proxy_model.setSourceModel(self.model)
         
-        #assign PROXY MODEL to VIEW
+        #assign PROXY MODEL to VIEW        
         self.view = view 
         self.view.setModel(self.proxy_model)
         self.view.setRootIsDecorated(False)
@@ -77,25 +97,19 @@ class Runs():
         #MODE EDIT/REFRESH        
         self.system = 0 
         
-        self.mode = myModel.MODE_EDIT           
+        #self.mode = myModel.MODE_EDIT           
                
-        self.db = db                
+        #self.db = db                
         
-        self.keys = keys
+        #self.keys = keys
         
-        self.updateModel()
-        self.createSlots()
-        
-        
-        
-                                           
-    def createSlots(self):
-        print "I: Runs: vytvarim sloty.."
+        #self.updateModel()
+        #self.createSlots()
+                                            
         #QtCore.QObject.connect(self.view, QtCore.SIGNAL("doubleClicked(QModelIndex)"), self.slot_Entered)
-        QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
-        QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)        
-
-    
+        #QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
+        #QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)        
+        
     #=======================================================================
     # SLOTS
     #=======================================================================    
@@ -106,7 +120,7 @@ class Runs():
             self.update()    #update table            
 
     #MODEL CHANGED        
-    def slot_ModelChanged(self,a,b):
+    def slot_ModelChanged_old(self,a,b):
         
         #user change, no auto update
         if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):
@@ -123,11 +137,12 @@ class Runs():
 
     #UPDATE TABLE        
     def update(self):                                        
-        self.updateModel()  #update model                                   
+        self.model.update()  #update model                                   
          
     #UPDATE MODEL
     #automaticky update, nahazuje se SYSTEM_WORKING aby nereagoval ModelChanged
-    def updateModel(self):
+    def updateModel_old(self):
+        return
         
         self.guidata.user_actions = GuiData.ACTIONS_DISABLE
         
@@ -147,14 +162,25 @@ class Runs():
             #get USER
             user = self.db.getParX("users", "id", run["name_id"]).fetchone()
             
+            #exist user?
+            if user==None:
+                username='unknown'
+            #NOT exist => restrict username                
+            else:
+                if(user['name']==''):
+                    username = 'nobody'
+                username = user['name']
+                
+            
+            
             try:
-                aux_array = [run["id"], run["date"], user["name"], run["description"]]
+                aux_array = [run["id"], run["date"], username, run["description"]]
                 #for key in self.keys:                            
                 #    if key in run.keys(): #content run this value?
                 #        aux_items.append(run[key])                                                    
                 self.model.addRow(aux_array)
             except:
-                print "E: Runs: Beh nelze pridat", run["id"]
+                print "E: Runs: Beh nelze pridat", run["id"] #, user["name"] 
             
                             
 

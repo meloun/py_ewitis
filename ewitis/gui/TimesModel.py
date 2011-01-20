@@ -8,11 +8,14 @@ import ewitis.gui.GuiData as GuiData
 
 
 class TimesModel(myModel.myModel):
-    def __init__(self, guidata, keys):                        
+    def __init__(self, view, name, db, guidata, keys):                        
         
         #create MODEL and his structure
-        myModel.myModel.__init__(self, keys)
-        self.GuiData = guidata
+        myModel.myModel.__init__(self, view, name, db, guidata, keys)
+        
+        #update with first run
+        self.run_id = self.db.getFirst("runs")['id']
+        self.update()
                 
     
     #setting flags for this model
@@ -21,7 +24,7 @@ class TimesModel(myModel.myModel):
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
         
-        if(self.GuiData.mode == GuiData.MODE_REFRESH):
+        if(self.guidata.mode == GuiData.MODE_REFRESH):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
         #id, name, kategory, addres NOT editable
@@ -29,6 +32,65 @@ class TimesModel(myModel.myModel):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+    
+    #["id", "nr", "time", "name", "kategory", "address"]
+    def db2tableRow(self, time_db):
+        
+        print time_db
+        
+        #get USER
+        user_db = self.db.getParX("users", "id", time_db["user_id"]).fetchone()
+        
+        #exist user?
+        if user_db == None:
+            user = {'id':0, 'nr':0, 'name':'unknown', 'kategory':'', 'address':''}
+        #exist => restrict username                
+        else:
+            if(user_db['name']==''):
+                user_db['name'] = 'nobody'
+            user = user_db            
+        
+        time_table = {}
+        time_table['id'] = time_db["id"]
+        time_table['nr'] = user['nr']
+        time_table['time'] = time_db["time_str"]
+        time_table['name'] = user['name']
+        time_table['kategory'] = user['kategory']
+        time_table['address'] = user['address']
+        time_table['description'] = user['address']
+                
+        return time_table
+    
+    def table2dbRow(self, tabTime): 
+        #prepare data
+        #aux_id = self.model.item(a.row(), 0).text()            
+        #aux_time = self.model.item(a.row(), 2).text()
+        #aux_nr = self.model.item(a.row(), 1).text()
+        
+        #find user par nr (from user table)
+        #try:            
+        #    user = self.db.getParX("users", "nr", tabTime['nr']).fetchone()
+        #    aux_dict = {"id" : aux_id, "user_id": aux_user["id"], "time_str" : aux_time}
+        #except:
+        #    aux_dict = {"id" : aux_id, "time_str" : aux_time}
+        #    print "E: Times: unknown user"
+            
+        user = self.db.getParX("users", "nr", tabTime['nr']).fetchone()
+        
+        print "user: ",user
+        print "tabTime: ",tabTime
+        
+        if(user == None):
+            dbTime = {'id': tabTime['id'], 'time_str' : tabTime['time']}
+        else:
+            dbTime = {'id': tabTime['id'], 'user_id':user['id'], 'time_str' : tabTime['time']} 
+                                                                                                                                         
+        return dbTime
+    
+    #UPDATE TABLE        
+    def update(self):
+        #update for selected run        
+        myModel.myModel.update(self, "run_id", self.run_id)                                                     
 
 class TimesProxyModel(myModel.myProxyModel):
     def __init__(self):                        
@@ -41,21 +103,20 @@ class TimesProxyModel(myModel.myProxyModel):
 
    
 # view <- proxymodel <- model 
-class Times():
-    def  __init__(self, view, db, guidata, keys):                
-        
-        #common Gui data
-        self.guidata = guidata
+class Times(myModel.myTable):
+    def  __init__(self, name, view, db, guidata, keys):                                        
         
         #create MODEL
-        self.model = TimesModel(guidata, keys)        
+        self.model = TimesModel(view, name, db, guidata, keys)        
         
         #create PROXY MODEL
         self.proxy_model = TimesProxyModel() 
         
+        myModel.myTable.__init__(self, name, view, db, guidata, keys)
+        
         
         #assign MODEL to PROXY MODEL
-        self.proxy_model.setSourceModel(self.model)
+        #self.proxy_model.setSourceModel(self.model)
         
         #assign PROXY MODEL to VIEW
         self.view = view 
@@ -79,10 +140,10 @@ class Times():
                
         self.db = db
         
-        self.keys = keys
+        #self.keys = keys
         
         #$self.updateModel()        
-        self.createSlots()
+        #self.createSlots()
         
     def createSlots(self):
         print "I: Runs: vytvarim sloty.."
@@ -94,7 +155,7 @@ class Times():
         #QtCore.QObject.connect(self.proxy_model, QtCore.SIGNAL("entered(QModelIndex)"), self.slot_Entered2)
         
         # DATA_CHANGED - zpetny zapis do DB, shozeni no_update
-        QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
+        #QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
                
     #=======================================================================
     # SLOTS
@@ -103,7 +164,7 @@ class Times():
               
         
     #MODEL CHANGED        
-    def slot_ModelChanged(self,a,b):
+    def slot_ModelChanged_old(self,a,b):
         
         #user change, no auto update
         if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                  
@@ -130,11 +191,12 @@ class Times():
     
     #UPDATE TABLE        
     def update(self, run_id): 
-        self.run_id = run_id                                               
-        self.updateModel(run_id)  #update model                             
+        self.run_id = run_id
+        self.model.update("run_id", run_id)                                               
+        #self.updateModel(run_id)  #update model                             
     
     #UPDATE TABLE        
-    def updateModel(self, run_id):           
+    def updateModel_old(self, run_id):           
         
         #self.system = myModel.SYSTEM_WORKING
         self.guidata.user_actions = GuiData.ACTIONS_DISABLE

@@ -35,9 +35,7 @@ DEFAULT_GUI_SHARED_MEMORY = {
                               "console_text":""
 }
 
-
-
-    
+   
 class wrapper_gui_ewitis(QtGui.QMainWindow):
     def __init__(self, parent=None, ShaMem_comm = manage_comm.DEFAULT_COMM_SHARED_MEMORY, ShaMem_gui = DEFAULT_GUI_SHARED_MEMORY):
         import libs.comm.serial_utils as serial_utils 
@@ -76,11 +74,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         # TABLES
         #=======================================================================
         self.GuiData = GuiData.GuiData()
-        self.R = RunsModel.Runs(self.ui.RunsProxyView, self.db, self.GuiData, ["id", "date", "name", "description"])
-        self.R.updateModel()        
-        self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, self.GuiData, ["id", "nr", "time", "name", "kategory", "address"])
+        self.R = RunsModel.Runs("runs", self.ui.RunsProxyView, self.db, self.GuiData, ["id", "date", "name", "description"])
+        self.R.update()        
+        self.T = TimesModel.Times("times", self.ui.TimesProxyView, self.db, self.GuiData, ["id", "nr", "time", "name", "kategory", "address"])
         self.updateTimes()
-        self.U = UsersModel.Users(self.ui.UsersProxyView, self.db, self.GuiData, ["id", "nr", "name", "kategory", "address"])
+        self.U = UsersModel.Users("users", self.ui.UsersProxyView, self.db, self.GuiData, ["id", "nr", "name", "kategory", "address"])
         self.U.model.update()
         
         #=======================================================================
@@ -114,8 +112,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                 self.ui.UsersFilterLineEdit, self.ui.UsersFilterClear,
                 self.ui.UsersImport, self.ui.UsersImport,
                 self.ui.UsersExport, self.ui.UsersImport, 
-                self.ui.UsersDelete)      
-                                                                  
+                self.ui.UsersDelete)                                                                  
         #COMM
         self.ShaMem_comm = ShaMem_comm                
                        
@@ -136,14 +133,26 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             
         #ziskani id z vybraneho radku   
         try:                      
-            run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
+            self.T.model.run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
                                              
             #get TIMES from database & add them to the table
             self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
-            self.T.update(run_id)             
+            self.T.model.update()             
             self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
         except:
-            print "I: Times: nelze aktualizovat!"    
+            print "I: Times: nelze aktualizovat!"
+    
+    def showMessage(self, title, message, type='warning', dialog=True, statusbar=True):
+        
+        #DIALOG
+        if(dialog):                                
+            if(type=='warning'):
+                QtGui.QMessageBox.warning(self, title, message)            
+            elif(type=='info'):
+                QtGui.QMessageBox.information(self, title, message)
+        #STATUSBAR        
+        if(statusbar):
+            self.ui.statusbar.showMessage(title+" : " + message)    
          
     def start(self):
         self.app = QtGui.QApplication(sys.argv)
@@ -152,7 +161,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         sys.exit(self.app.exec_())
                 
     def updateShM(self):
-        self.ShaMem_comm["port"] = str(self.ui.aSetPort.text())         
+        self.ShaMem_comm["port"] = str(self.ui.aSetPort.text()) 
+                
 
          
     #=======================================================================
@@ -206,8 +216,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aRefreshMode.setChecked(True) 
         self.ui.aEditMode.setChecked(False)  
         self.GuiData.mode = GuiData.MODE_REFRESH     
-        #self.T.model.mode = myModel.MODE_REFRESH          
-        #self.R.model.mode = myModel.MODE_REFRESH
+        self.T.model.mode = myModel.MODE_REFRESH          
+        self.R.model.mode = myModel.MODE_REFRESH
         #self.U.model.mode = myModel.MODE_REFRESH
               
                      

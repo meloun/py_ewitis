@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ewitis.ui'
 #
-# Created: Sat Jan 08 10:27:16 2011
+# Created: Thu Jan 20 15:28:05 2011
 #      by: PyQt4 UI code generator 4.7.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,10 +12,11 @@ from PyQt4 import QtCore, QtGui
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1105, 504)
+        MainWindow.resize(1122, 504)
         font = QtGui.QFont()
         MainWindow.setFont(font)
         MainWindow.setFocusPolicy(QtCore.Qt.StrongFocus)
+        MainWindow.setToolTip("")
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.tabWidget = QtGui.QTabWidget(self.centralwidget)
@@ -58,6 +59,7 @@ class Ui_MainWindow(object):
         self.RunsExport.setFlat(True)
         self.RunsExport.setObjectName("RunsExport")
         self.RunsImport = QtGui.QPushButton(self.RunsIcons)
+        self.RunsImport.setEnabled(False)
         self.RunsImport.setGeometry(QtCore.QRect(120, 0, 31, 31))
         self.RunsImport.setText("")
         icon2 = QtGui.QIcon()
@@ -112,6 +114,7 @@ class Ui_MainWindow(object):
         self.TimesExport.setFlat(True)
         self.TimesExport.setObjectName("TimesExport")
         self.TimesImport = QtGui.QPushButton(self.TimesIcons)
+        self.TimesImport.setEnabled(False)
         self.TimesImport.setGeometry(QtCore.QRect(120, 0, 31, 31))
         self.TimesImport.setText("")
         self.TimesImport.setIcon(icon2)
@@ -197,7 +200,7 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tabUsers, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1105, 20))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1122, 20))
         self.menubar.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.menubar.setObjectName("menubar")
         self.menuHelp = QtGui.QMenu(self.menubar)
@@ -258,7 +261,6 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
-        MainWindow.setToolTip(QtGui.QApplication.translate("MainWindow", "Smazat vybran├Ż z├íznam", None, QtGui.QApplication.UnicodeUTF8))
         self.RunsFilterClear.setToolTip(QtGui.QApplication.translate("MainWindow", "Cancel filter", None, QtGui.QApplication.UnicodeUTF8))
         self.RunsExport.setToolTip(QtGui.QApplication.translate("MainWindow", "Export", None, QtGui.QApplication.UnicodeUTF8))
         self.RunsImport.setToolTip(QtGui.QApplication.translate("MainWindow", "Import", None, QtGui.QApplication.UnicodeUTF8))

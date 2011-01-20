@@ -5,6 +5,8 @@
 
 import sys
 from PyQt4 import Qt, QtCore, QtGui
+import libs.db_csv.db_csv as Db_csv
+import libs.sqlite.sqlite as sqlite
 
 
 class AddSignal():
@@ -27,7 +29,7 @@ class AddSignal():
         QtCore.QObject.connect(btn_import, QtCore.SIGNAL("clicked()"), lambda : self.sImport(table))        
         
         # DELETE BUTTON -> EMPTY TABLE
-        QtCore.QObject.connect(btn_delete, QtCore.SIGNAL("clicked()"), lambda : self.sDelete(table))
+        QtCore.QObject.connect(btn_delete, QtCore.SIGNAL("clicked()"), lambda : self.sDeleteAll(table))
         
         
     # CLEAR FILTER BUTTON -> CLEAR FILTER        
@@ -39,36 +41,60 @@ class AddSignal():
         regExp = QtCore.QRegExp(filter.text(), QtCore.Qt.CaseInsensitive, QtCore.QRegExp.RegExp)
         table.proxy_model.setFilterRegExp(regExp)      
     
+     
+    
+    # IMPORT
+    # CSV FILE => DB               
+    def sImport(self, table): 
+                           
+        filename = QtGui.QFileDialog.getOpenFileName(self.gui,"Import CSV to table "+table.name,"table_"+table.name+".csv","Csv Files (*.csv)")        
+        
+        #cancel or close window
+        if(filename == ""):                 
+            return        
+                  
+        try:              
+            #state = table.importCsv2(filename)
+            state = table.db.importCsv(table.name, filename, table.keys)
+            table.model.update()
+            self.sImportDialog(table, state)
+        except sqlite.CSV_FILE_Error:
+            self.gui.showMessage(table.name+" CSV Import", "NOT Succesfully imported\n wrong file format")
+        #except:
+        #    self.gui.showMessage(table.name+" CSV Import", "nothing imported", type="info", dialog=False)
             
-    # IMPORT BUTTON -> CHANGE TABLE     
-    #WEB - id, kategorie, prijmeni, jmeno, adresa,.. 
-    #DB - id, nr, name, kategory, address 
-    def sImport(self, table):                        
-        fileName = QtGui.QFileDialog.getOpenFileName(self.gui,"a","aa","Csv Files (*.csv)") 
-        print "aa",fileName        
-        state = table.importCsv("Blizak_2010.csv")
-        self.sImportDialog(table, state)
+            
         
     def sImportDialog(self, table, state):               
         #error message
-        title = "Import"
+        title = table.name+" CSV Import"
         if(state['ko'] != 0) :                                               
-            message = str(state['ko'])+" record(s) NOT succesfully imported.\n\n Probably already exist."
-            QtGui.QMessageBox.warning(self.gui, title, message)
-        else:
-            message = str(state['ok'])+" record(s) succesfully imported."
-            QtGui.QMessageBox.information(self.gui, title, message)            
-        #self.ui.statusbar.showMessage(title+" : " + message)
+            self.gui.showMessage(title, "NOT Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.\n"+str(state['ko'])+" record(s) NOT imported.\n\n Probably already exist.") 
+        else:                        
+            self.gui.showMessage(title,"Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.", type='info')                                
         
-    # EXPORT BUTTON -> EXPORT CSV     
-    #WEB - id, kategorie, prijmeni, jmeno, adresa,.. 
-    #DB - id, nr, name, kategory, address 
-    def sExport(self, table):                        
-        print "exportuji.."
+    # EXPORT
+    # WEB (or DB) => CSV FILE
+    # what you see, is exported    
+    def sExport(self, table, source='table'):                        
+        
+        #get filename, gui dialog 
+        filename = QtGui.QFileDialog.getSaveFileName(self.gui,"Export table "+table.name+" to CSV","table_"+table.name+".csv","Csv Files (*.csv)")                
+        if(filename == ""):
+            return
+              
+        #title
+        title = table.name + " CSV Export"
+         
+        #export to csv file
+        try:                        
+            table.export_csv(filename, source)                                
+            self.gui.showMessage(title, "Succesfully", dialog=False)            
+        except:            
+            self.gui.showMessage(title, "NOT succesfully \n\nCannot write into the file")
+                     
                         
-    # DELETE BUTTON -> EXPORT CSV         
-    #WEB - id, kategorie, prijmeni, jmeno, adresa,.. 
-    #DB - id, nr, name, kategory, address 
-    def sDelete(self, table):                        
-        print "delete.."
+    # DELETE BUTTON          
+    def sDeleteAll(self, table):
+        table.deleteAll()                                
     
