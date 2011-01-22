@@ -21,17 +21,7 @@ class UsersModel(myModel.myModel):
         
     #first collumn is NOT editable      
     def flags(self, index):
-        if not index.isValid():
-            return QtCore.Qt.ItemIsEnabled
-        
-        if(self.guidata.mode == GuiData.MODE_REFRESH):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-        
-        #id NOT editable
-        if (index.column() == 0):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-        
-        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+        return myModel.myModel.flags(self, index)
     
     #"id", "nr", "name", "kategory", "address"
     def db2tableRow(self, dbUser):                                        

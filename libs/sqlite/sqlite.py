@@ -39,7 +39,7 @@ class sqlite_db(object):
         return res 
             
     def query(self, query):
-        print query
+        #print "query: ",query
         res = self.db.execute(query)                
         return res
         
@@ -98,7 +98,7 @@ class sqlite_db(object):
         query = "insert into %s(%s) values(%s)" % (tablename, keys_str, values_str)
         
         res = self.query(query)
-        #self.commit()
+        self.commit()
         return res
     
     '''vlozeni jednoho zaznamu z dict'''

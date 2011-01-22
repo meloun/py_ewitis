@@ -13,30 +13,31 @@ class TimesModel(myModel.myModel):
         #create MODEL and his structure
         myModel.myModel.__init__(self, view, name, db, guidata, keys)
         
-        #update with first run
-        self.run_id = self.db.getFirst("runs")['id']
+        
+        #update with first run        
+        first_run = self.db.getFirst("runs")
+        if(first_run != None):
+            self.run_id = first_run['id']
+        else:
+            self.run_id = 0 #no times for run_id = 0 
+                
         self.update()
                 
     
     #setting flags for this model
     #first collumn is NOT editable
-    def flags(self, index):
-        if not index.isValid():
-            return QtCore.Qt.ItemIsEnabled
-        
-        if(self.guidata.mode == GuiData.MODE_REFRESH):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+    def flags(self, index): 
         
         #id, name, kategory, addres NOT editable
-        if ((index.column() == 0) or (index.column() == 3) or (index.column() == 4) or (index.column() == 5)):
+        if ((index.column() == 3) or (index.column() == 4) or (index.column() == 5)):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
-        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+        return myModel.myModel.flags(self, index)
     
     #["id", "nr", "time", "name", "kategory", "address"]
     def db2tableRow(self, time_db):
         
-        print time_db
+        #print time_db
         
         #get USER
         user_db = self.db.getParX("users", "id", time_db["user_id"]).fetchone()
@@ -88,7 +89,11 @@ class TimesModel(myModel.myModel):
         return dbTime
     
     #UPDATE TABLE        
-    def update(self):
+    def update(self, run_id = None):
+        
+        if(run_id != None):                    
+            self.run_id = run_id #update run_id 
+            
         #update for selected run        
         myModel.myModel.update(self, "run_id", self.run_id)                                                     
 
@@ -190,10 +195,8 @@ class Times(myModel.myTable):
         
     
     #UPDATE TABLE        
-    def update(self, run_id): 
-        self.run_id = run_id
-        self.model.update("run_id", run_id)                                               
-        #self.updateModel(run_id)  #update model                             
+    def update(self, run_id = None):                     
+        self.model.update(run_id)                                                                                    
     
     #UPDATE TABLE        
     def updateModel_old(self, run_id):           

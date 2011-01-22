@@ -22,17 +22,13 @@ class RunsModel(myModel.myModel):
     #setting flags for this model        
     #first collumn is NOT editable
     def flags(self, index):
-        if not index.isValid():
-            return QtCore.Qt.ItemIsEnabled
-        
-        if(self.guidata.mode == GuiData.MODE_REFRESH):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        aux_flags = 0
         
         #id, name, kategory, addres NOT editable
-        if ((index.column() == 0) or (index.column() == 2)):
+        if (index.column() == 2):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-
-        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+        
+        return myModel.myModel.flags(self, index)
         
     def db2tableRow(self, run):                        
         
@@ -53,6 +49,9 @@ class RunsModel(myModel.myModel):
     def table2dbRow(self, run_table): 
         run_db = {"id" : run_table['id'], "date" : run_table['date'], "description" :  run_table['description']}                                                                       
         return run_db
+    
+    
+        
 
 class RunsProxyModel(myModel.myProxyModel):
     def __init__(self):                        
@@ -89,22 +88,11 @@ class Runs(myModel.myTable):
         self.view.setColumnWidth(1,130)
         self.view.setColumnWidth(2,150)
         self.view.setColumnWidth(3,100)
-        
-        #TIMERs
-        self.timer1s = QtCore.QTimer() 
-        self.timer1s.start(1000)
+    
         
         #MODE EDIT/REFRESH        
         self.system = 0 
         
-        #self.mode = myModel.MODE_EDIT           
-               
-        #self.db = db                
-        
-        #self.keys = keys
-        
-        #self.updateModel()
-        #self.createSlots()
                                             
         #QtCore.QObject.connect(self.view, QtCore.SIGNAL("doubleClicked(QModelIndex)"), self.slot_Entered)
         #QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
@@ -112,32 +100,12 @@ class Runs(myModel.myTable):
         
     #=======================================================================
     # SLOTS
-    #=======================================================================    
-                
-    #UPDATE TIMER    
-    def slot_Timer1s(self):        
-        if (self.guidata.mode == GuiData.MODE_REFRESH): 
-            self.update()    #update table            
+    #=======================================================================                
 
-    #MODEL CHANGED        
-    def slot_ModelChanged_old(self,a,b):
-        
-        #user change, no auto update
-        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):
-            
-            #prepare data
-            aux_id = self.model.item(a.row(), 0).text()            
-            aux_date = self.model.item(a.row(), 1).text()    
-            aux_description = self.model.item(a.row(), 3).text()
-            
-            aux_dict = {"id" : aux_id, "date" : aux_date, "description" :  aux_description}
-            
-            #replace                         
-            self.db.update_from_dict("runs", aux_dict)
 
     #UPDATE TABLE        
-    def update(self):                                        
-        self.model.update()  #update model                                   
+    #def update(self):                                        
+    #    self.model.update()  #update model                                           
          
     #UPDATE MODEL
     #automaticky update, nahazuje se SYSTEM_WORKING aby nereagoval ModelChanged

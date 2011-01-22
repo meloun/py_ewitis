@@ -21,6 +21,7 @@ class myModel(QtGui.QStandardItemModel):
         self.db  = db
         self.guidata = guidata
         self.keys = keys
+        self.mode = MODE_EDIT
         
         #model structure
         for i in range(len(keys)):        
@@ -103,21 +104,25 @@ class myModel(QtGui.QStandardItemModel):
                 print "NOT adding row ", key
                             
     
+    
     # update model from DB
-    # call table-spoecific function <= upgrade dictionary
+    # call table-specific function <= upgrade dictionary
     def update(self, parameter=None, value=None):
                 
         self.guidata.user_actions = GuiData.ACTIONS_DISABLE
         
-        #get TIMES from database & add them to the table
-        self.removeRows(0, self.rowCount())        
+      
+        
+        #remove all rows
+        self.removeRows(0, self.rowCount())  
         
         #get rows from DB
         if (parameter == None):                
             rows = self.db.getAll(self.name)
         else:
-            print parameter, value
             rows = self.db.getParX(self.name, parameter, value)
+        
+        
                                     
         #add rows in table
         for row in rows:            
@@ -225,7 +230,7 @@ class myTable():
         self.timer1s.start(1000);
         
         #MODE EDIT/REFRESH        
-        self.mode = MODE_REFRESH
+        self.mode = MODE_EDIT
                
         self.db = db
         
@@ -235,7 +240,7 @@ class myTable():
         self.createSlots()
         
     def createSlots(self):
-        print "I: Users: vytvarim sloty.."
+        print "I: XX:",self.name," vytvarim sloty.."
         
         QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
         # DATA_CHANGED - zpetny zapis do DB, shozeni no_update
@@ -246,7 +251,7 @@ class myTable():
     #=======================================================================
         
     #UPDATE TIMER    
-    def slot_Timer1s(self):        
+    def slot_Timer1s(self):         
         if (self.guidata.mode == GuiData.MODE_REFRESH): 
             self.update()    #update table              
         
@@ -269,6 +274,26 @@ class myTable():
             #get db as tuples; save into file in csv format
             rows = self.db.getParXX(self.name, conditions, 'OR')
             aux_csv.save(rows)
+            
+    def update(self):
+                    
+        #get row-selection
+        try:
+            rows = self.view.selectionModel().selectedRows()         
+            model_index = rows[0] #selected row index #row = rows[0].row() if rows else 0        
+        except:
+            pass 
+        
+        self.model.update()
+        
+            
+        #row-selection back                           
+        try: 
+            self.view.selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent) #self.tables_info['runs']['selection']            
+        except:
+            pass
+        
+         
         
     def delete(self):
         self.db.delete(self.name)
@@ -277,12 +302,8 @@ class myTable():
     def deleteAll(self):
         self.db.deleteAll(self.name)
         self.model.update()
-               
-                
-    
-    #UPDATE TABLE        
-    def update(self):         
-        self.model.update()  #update model          
+        
+                                        
             
     #IMPORT
     #CSV - id, kategorie, prijmeni, jmeno, adresa,.. 

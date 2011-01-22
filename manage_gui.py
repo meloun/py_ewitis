@@ -91,6 +91,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.actionAbout, QtCore.SIGNAL("activated()"), self.sAbout)  
         QtCore.QObject.connect(self.ui.aRefreshMode, QtCore.SIGNAL("activated()"), self.sRefreshMode)      
         QtCore.QObject.connect(self.ui.aEditMode, QtCore.SIGNAL("activated()"), self.sEditMode)
+        QtCore.QObject.connect(self.ui.tabWidget, QtCore.SIGNAL("currentChanged (int)"), self.sTabChanged)
         
         #SIGNALs & SLOTs
         #class for adding and manage signals and slots
@@ -133,11 +134,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             
         #ziskani id z vybraneho radku   
         try:                      
-            self.T.model.run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
+            run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
                                              
             #get TIMES from database & add them to the table
             self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
-            self.T.model.update()             
+            self.T.update(run_id)             
             self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
         except:
             print "I: Times: nelze aktualizovat!"
@@ -168,6 +169,14 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
     #=======================================================================
     # SLOTS
     #=======================================================================
+    def sTabChanged(self, nr):
+        if(nr==0):
+            self.R.update()
+            self.updateTimes()  #update TIMES table
+            #self.T.update()
+        elif(nr==1):
+            self.U.update()
+        
     def sRunsProxyView_SelectionChanged(self, selected, deselected):               
         if(selected):
             #print "selection changed"  
@@ -178,9 +187,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aEditMode.setChecked(True) 
         self.ui.aRefreshMode.setChecked(False)
         self.GuiData.mode = GuiData.MODE_EDIT  
-        #self.T.model.mode = myModel.MODE_EDIT           
-        #self.R.model.mode = myModel.MODE_EDIT
-        #self.U.model.mode = myModel.MODE_EDIT  
+        self.T.model.mode = myModel.MODE_EDIT           
+        self.R.model.mode = myModel.MODE_EDIT
+        self.U.model.mode = myModel.MODE_EDIT  
         
     
     def sImportRuns(self):
@@ -212,7 +221,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         
         
     def sRefreshMode(self):
-        print "I: switching to refreshing mode.."
+        print "I: switching to refreshing mode.. main"
         self.ui.aRefreshMode.setChecked(True) 
         self.ui.aEditMode.setChecked(False)  
         self.GuiData.mode = GuiData.MODE_REFRESH     
@@ -224,9 +233,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                                                                                            
     def sRefresh(self):
         print "I: refreshing.."
-        self.R.update()
-        
-        self.R.update()              
+        self.R.update()                
+                      
     def sPortSet(self):
         import libs.comm.serial_utils as serial_utils 
         print "GUI: aPortSet activated()"
