@@ -84,7 +84,7 @@ class sqlite_db(object):
     # INSERT
     ###########
     
-    def insert_from_lists(self, tablename, keys, values):
+    def insert_from_lists(self, tablename, keys, values, commit = True):
                 
         
         '''vytvoreni stringu pro dotaz, nazvy sloupcu a hodnot '''        
@@ -98,12 +98,14 @@ class sqlite_db(object):
         query = "insert into %s(%s) values(%s)" % (tablename, keys_str, values_str)
         
         res = self.query(query)
-        self.commit()
+        
+        if(commit == True):
+            self.commit()
         return res
     
     '''vlozeni jednoho zaznamu z dict'''
-    def insert_from_dict(self, tablename, dict):                
-        return self.insert_from_lists(tablename, dict.keys(), dict.values())        
+    def insert_from_dict(self, tablename, dict,  commit = True):        
+        return self.insert_from_lists(tablename, dict.keys(), dict.values(), commit = commit )        
     
     ###########
     # REPLACE
@@ -200,17 +202,17 @@ class sqlite_db(object):
         state = {'ko':0, 'ok':0}                        
         
         #wrong file format?
-        if rows==[] or rows.pop(0) != keys:
+        if (rows==[]) or (rows.pop(0) != keys):
             raise CSV_FILE_Error         
             
         for row in rows:                                                              
                                                       
             #ADD USER
-            try:            
-                self.insert_from_dict(tablename, dict(zip(keys, row)))
-                state['ok'] += 1            
-            except:
-                state['ko'] += 1 #increment errors for error message
+            #try:            
+            self.insert_from_dict(tablename, dict(zip(keys, row)), commit = False)
+            state['ok'] += 1            
+            #except:
+            #    state['ko'] += 1 #increment errors for error message
 
         self.db.commit()                        
         

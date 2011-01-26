@@ -73,11 +73,11 @@ class Users(myModel.myTable):
         self.view.setRootIsDecorated(False)
         self.view.setAlternatingRowColors(True)        
         self.view.setSortingEnabled(True)
-        self.view.setColumnWidth(0,50)
-        self.view.setColumnWidth(1,50)
-        self.view.setColumnWidth(2,150)
-        self.view.setColumnWidth(3,150)
-        self.view.setColumnWidth(4,150)        
+        self.view.setColumnWidth(0,40)
+        self.view.setColumnWidth(1,40)
+        self.view.setColumnWidth(2,100)
+        self.view.setColumnWidth(3,100)
+        self.view.setColumnWidth(4,100)        
         
         #TIMERs
         self.timer1s = QtCore.QTimer(); 

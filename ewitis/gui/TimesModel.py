@@ -9,9 +9,12 @@ import ewitis.gui.GuiData as GuiData
 
 class TimesModel(myModel.myModel):
     def __init__(self, view, name, db, guidata, keys):                        
+                
         
         #create MODEL and his structure
         myModel.myModel.__init__(self, view, name, db, guidata, keys)
+        
+        self.showall = False
         
         
         #update with first run        
@@ -92,10 +95,16 @@ class TimesModel(myModel.myModel):
     def update(self, run_id = None):
         
         if(run_id != None):                    
-            self.run_id = run_id #update run_id 
+            self.run_id = run_id #update run_id
             
-        #update for selected run        
-        myModel.myModel.update(self, "run_id", self.run_id)                                                     
+        #update times
+        if(self.showall):
+            #update all times             
+            myModel.myModel.update(self)            
+        else:            
+            #update for selected run        
+            myModel.myModel.update(self, "run_id", self.run_id)
+                                                     
 
 class TimesProxyModel(myModel.myProxyModel):
     def __init__(self):                        
@@ -109,7 +118,15 @@ class TimesProxyModel(myModel.myProxyModel):
    
 # view <- proxymodel <- model 
 class Times(myModel.myTable):
-    def  __init__(self, name, view, db, guidata, keys):                                        
+    def  __init__(self, view, db, guidata):  
+        
+        #table and db table name
+        name = "times"  
+        
+        #table keys
+        keys = ["id", "nr", "time", "name", "kategory", "address"]
+        
+                                            
         
         #create MODEL
         self.model = TimesModel(view, name, db, guidata, keys)        
@@ -129,10 +146,10 @@ class Times(myModel.myTable):
         self.view.setRootIsDecorated(False)
         self.view.setAlternatingRowColors(True)        
         self.view.setSortingEnabled(True)
-        self.view.setColumnWidth(0,50)
-        self.view.setColumnWidth(1,50)
+        self.view.setColumnWidth(0,40)
+        self.view.setColumnWidth(1,40)
         self.view.setColumnWidth(2,100)
-        self.view.setColumnWidth(3,120)
+        self.view.setColumnWidth(3,100)
         self.view.setColumnWidth(4,60)
         self.view.setColumnWidth(5,100)
         
@@ -198,29 +215,7 @@ class Times(myModel.myTable):
     def update(self, run_id = None):                     
         self.model.update(run_id)                                                                                    
     
-    #UPDATE TABLE        
-    def updateModel_old(self, run_id):           
-        
-        #self.system = myModel.SYSTEM_WORKING
-        self.guidata.user_actions = GuiData.ACTIONS_DISABLE
-                               
-        #get TIMES from database & add them to the table
-        self.model.removeRows(0, self.model.rowCount())        
-        try:                
-            times = self.db.getParX("times","run_id", run_id)                        
-            for time in times:
-                
-                #get USER
-                user = self.db.getParX("users", "id", time["user_id"]).fetchone()
-                                                             
-                #add TABLE ROW                                                             
-                aux_array = [time["id"], user['nr'], time["time_str"], user['name'], user['kategory'], user['address']]
-                self.model.addRow(aux_array)                     
-        except:
-            print "I: DB: tableTimes is empty! "
-            
-        #self.system = myModel.SYSTEM_SLEEP
-        self.guidata.user_actions = GuiData.ACTIONS_ENABLE
+
             
             
 

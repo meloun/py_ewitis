@@ -74,9 +74,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         # TABLES
         #=======================================================================
         self.GuiData = GuiData.GuiData()
-        self.R = RunsModel.Runs("runs", self.ui.RunsProxyView, self.db, self.GuiData, ["id", "date", "name", "description"])
+        self.R = RunsModel.Runs(self.ui.RunsProxyView, self.db, self.GuiData, self.ui)
         self.R.update()        
-        self.T = TimesModel.Times("times", self.ui.TimesProxyView, self.db, self.GuiData, ["id", "nr", "time", "name", "kategory", "address"])
+        self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, self.GuiData)
         self.updateTimes()
         self.U = UsersModel.Users("users", self.ui.UsersProxyView, self.db, self.GuiData, ["id", "nr", "name", "kategory", "address"])
         self.U.model.update()
@@ -92,6 +92,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.aRefreshMode, QtCore.SIGNAL("activated()"), self.sRefreshMode)      
         QtCore.QObject.connect(self.ui.aEditMode, QtCore.SIGNAL("activated()"), self.sEditMode)
         QtCore.QObject.connect(self.ui.tabWidget, QtCore.SIGNAL("currentChanged (int)"), self.sTabChanged)
+        QtCore.QObject.connect(self.ui.TimesShowAll, QtCore.SIGNAL("stateChanged (int)"), self.sTimesShowAllChanged)
         
         #SIGNALs & SLOTs
         #class for adding and manage signals and slots
@@ -99,14 +100,14 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         
         AddSignal.table(self.R, 
                 self.ui.RunsFilterLineEdit, self.ui.RunsFilterClear,
-                self.ui.RunsImport, self.ui.RunsImport,
-                self.ui.RunsExport, self.ui.RunsImport, 
+                self.ui.RunsExport, self.ui.RunsExport,
+                self.ui.RunsExport, None, 
                 self.ui.RunsDelete)
         
         AddSignal.table(self.T, 
                         self.ui.TimesFilterLineEdit, self.ui.TimesFilterClear,
-                        self.ui.TimesImport, self.ui.TimesImport,
-                        self.ui.TimesExport, self.ui.TimesImport, 
+                        self.ui.TimesExport, self.ui.TimesExport,
+                        self.ui.TimesExport, None, 
                         self.ui.TimesDelete)
         
         AddSignal.table(self.U, 
@@ -176,6 +177,14 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             #self.T.update()
         elif(nr==1):
             self.U.update()
+            
+    def sTimesShowAllChanged(self, state):        
+        if(state == 0):
+            self.T.model.showall = False
+        elif(state == 2):
+            self.T.model.showall = True
+        self.T.update()
+        
         
     def sRunsProxyView_SelectionChanged(self, selected, deselected):               
         if(selected):

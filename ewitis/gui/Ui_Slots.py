@@ -26,7 +26,8 @@ class AddSignal():
         QtCore.QObject.connect(btn_export, QtCore.SIGNAL("clicked()"), lambda : self.sExport(table))
         
         # IMPORT BUTTON -> CHANGE TABLE
-        QtCore.QObject.connect(btn_import, QtCore.SIGNAL("clicked()"), lambda : self.sImport(table))        
+        if (btn_import != None):
+            QtCore.QObject.connect(btn_import, QtCore.SIGNAL("clicked()"), lambda : self.sImport(table))        
         
         # DELETE BUTTON -> EMPTY TABLE
         QtCore.QObject.connect(btn_delete, QtCore.SIGNAL("clicked()"), lambda : self.sDeleteAll(table))
