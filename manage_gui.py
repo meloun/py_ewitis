@@ -74,11 +74,13 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         # TABLES
         #=======================================================================
         self.GuiData = GuiData.GuiData()
-        self.R = RunsModel.Runs(self.ui.RunsProxyView, self.db, self.GuiData, self.ui)
+        self.R = RunsModel.Runs( RunsModel.RunsParameters(self).params )
         self.R.update()        
-        self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, self.GuiData)
+        #self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, self.GuiData)
+        self.T = TimesModel.Times( TimesModel.TimesParameters(self).params )
         self.updateTimes()
-        self.U = UsersModel.Users("users", self.ui.UsersProxyView, self.db, self.GuiData, ["id", "nr", "name", "kategory", "address"])
+        
+        self.U = UsersModel.Users( UsersModel.UsersParameters(self).params)
         self.U.model.update()
         
         #=======================================================================
@@ -102,19 +104,22 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                 self.ui.RunsFilterLineEdit, self.ui.RunsFilterClear,
                 self.ui.RunsExport, self.ui.RunsExport,
                 self.ui.RunsExport, None, 
-                self.ui.RunsDelete)
+                self.ui.RunsDelete,
+                self.ui.runsCounter)
         
         AddSignal.table(self.T, 
                         self.ui.TimesFilterLineEdit, self.ui.TimesFilterClear,
                         self.ui.TimesExport, self.ui.TimesExport,
                         self.ui.TimesExport, None, 
-                        self.ui.TimesDelete)
+                        self.ui.TimesDelete,
+                        self.ui.timesCounter)
         
         AddSignal.table(self.U, 
                 self.ui.UsersFilterLineEdit, self.ui.UsersFilterClear,
                 self.ui.UsersImport, self.ui.UsersImport,
                 self.ui.UsersExport, self.ui.UsersImport, 
-                self.ui.UsersDelete)                                                                  
+                self.ui.UsersDelete,
+                self.ui.usersCounter)                                                                  
         #COMM
         self.ShaMem_comm = ShaMem_comm                
                        
@@ -128,7 +133,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
 
     # UPDATE TIMES
     # function for update table TIMES according to selection in RUNS
-    def updateTimes(self):        
+    def updateTimes(self):         
                          
         #ziskani oznaceneho radku z tableRuns 
         rows = self.ui.RunsProxyView.selectionModel().selectedRows()

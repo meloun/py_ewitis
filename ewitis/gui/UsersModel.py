@@ -8,13 +8,31 @@ import ewitis.gui.GuiData as GuiData
 import libs.db_csv.db_csv as Db_csv
 
 
-
+class UsersParameters():
+    def __init__(self, source):
+        
+        self.params = {}
+        
+        #table and db table name
+        self.params['name'] = "users"  
+        
+        #table keys
+        self.params['keys'] = ["id", "nr", "name", "kategory", "address"]
+        
+        #db for acces
+        self.params['db'] = source.db
+        
+        #guidata
+        self.params['guidata'] = source.GuiData
+        
+        #view
+        self.params['view'] = source.ui.UsersProxyView
 
 class UsersModel(myModel.myModel):
-    def __init__(self, view, name, db, guidata, keys):                        
+    def __init__(self, params):                        
         
         #create MODEL and his structure
-        myModel.myModel.__init__(self, view, name, db, guidata, keys)
+        myModel.myModel.__init__(self, params)
 
         self.update()                    
 
@@ -53,31 +71,31 @@ class UsersProxyModel(myModel.myProxyModel):
 
 # view <- proxymodel <- model 
 class Users(myModel.myTable):
-    def  __init__(self, name, view, db, guidata, keys):                
+    def  __init__(self, params):                
                 
         #create MODEL
-        self.model = UsersModel(view, name, db, guidata, keys)        
+        self.model = UsersModel(params)        
         
         #create PROXY MODEL
         self.proxy_model = UsersProxyModel() 
         
-        myModel.myTable.__init__(self, name, view, db, guidata, keys)
+        myModel.myTable.__init__(self, params)
         
         
         #assign MODEL to PROXY MODEL
         #self.proxy_model.setSourceModel(self.model)
         
         #assign PROXY MODEL to VIEW
-        self.view = view 
-        self.view.setModel(self.proxy_model)
-        self.view.setRootIsDecorated(False)
-        self.view.setAlternatingRowColors(True)        
-        self.view.setSortingEnabled(True)
-        self.view.setColumnWidth(0,40)
-        self.view.setColumnWidth(1,40)
-        self.view.setColumnWidth(2,100)
-        self.view.setColumnWidth(3,100)
-        self.view.setColumnWidth(4,100)        
+        #self.view = view 
+        self.params['view'].setModel(self.proxy_model)
+        self.params['view'].setRootIsDecorated(False)
+        self.params['view'].setAlternatingRowColors(True)        
+        self.params['view'].setSortingEnabled(True)
+        self.params['view'].setColumnWidth(0,40)
+        self.params['view'].setColumnWidth(1,40)
+        self.params['view'].setColumnWidth(2,100)
+        self.params['view'].setColumnWidth(3,100)
+        self.params['view'].setColumnWidth(4,100)        
         
         #TIMERs
         self.timer1s = QtCore.QTimer(); 

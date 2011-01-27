@@ -11,24 +11,22 @@ MODE_EDIT, MODE_REFRESH = range(2)
 SYSTEM_SLEEP, SYSTEM_WORKING = range(2)
     
 class myModel(QtGui.QStandardItemModel):
-    def __init__(self, view, name, db, guidata, keys):
+    def __init__(self, params):
+        
+        self.params = params
         
         #model
-        QtGui.QStandardItemModel.__init__(self, 0, len(keys))                
+        QtGui.QStandardItemModel.__init__(self, 0, len(self.params['keys']))                
         
-        self.view = view
-        self.name  = name
-        self.db  = db
-        self.guidata = guidata
-        self.keys = keys
+
         self.mode = MODE_EDIT
         
         #model structure
-        for i in range(len(keys)):        
-            self.setHeaderData(i, QtCore.Qt.Horizontal, keys[i]) 
+        for i in range(len(self.params['keys'])):        
+            self.setHeaderData(i, QtCore.Qt.Horizontal, self.params['keys'][i]) 
             self.setHeaderData(i, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignHCenter), QtCore.Qt.TextAlignmentRole)
                     
-        print self.name," : vytvarim sloty"
+        print self.params['name']," : vytvarim sloty"
         QtCore.QObject.connect(self, QtCore.SIGNAL("itemChanged(QStandardItem *)"), self.slot_ModelChanged)
                 
     #MODEL CHANGED - define editable rows
@@ -53,7 +51,7 @@ class myModel(QtGui.QStandardItemModel):
     def slot_ModelChanged(self, item):
                 
         #user change, no auto update
-        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                                          
+        if((self.params['guidata'].mode == GuiData.MODE_EDIT) and (self.params['guidata'].user_actions == GuiData.ACTIONS_ENABLE)):                                          
             
             #virtual function
             #get dictionary with row-data, ready for DB
@@ -62,11 +60,10 @@ class myModel(QtGui.QStandardItemModel):
             dbRow = self.table2dbRow(tabRow)
                                                             
             #replace
-            try:
-                print "trying update"                                       
-                self.db.update_from_dict(self.name, dbRow)
+            try:                                       
+                self.params['db'].update_from_dict(self.params['name'], dbRow)
             except:
-                QtGui.QMessageBox.warning(self.view, "Error", "User with this number already exist!")
+                QtGui.QMessageBox.warning(self.params['view'], "Error", "User with this number already exist!")
             
             print "I: users: replacing.. ", dbRow            
             self.update()
@@ -77,7 +74,7 @@ class myModel(QtGui.QStandardItemModel):
         column = 0
         dict = {}
         
-        for key in self.keys:            
+        for key in self.params['keys']:            
             dict[key] = self.item(row, column).text()
             column += 1
         
@@ -90,7 +87,7 @@ class myModel(QtGui.QStandardItemModel):
         self.insertRow(0)                
                         
         #through defined keys
-        for key in self.keys:                                        
+        for key in self.params['keys']:                                      
                                                      
             #exist in row?                                               
             if (key in row.keys()):                                                                      
@@ -109,7 +106,7 @@ class myModel(QtGui.QStandardItemModel):
     # call table-specific function <= upgrade dictionary
     def update(self, parameter=None, value=None):
                 
-        self.guidata.user_actions = GuiData.ACTIONS_DISABLE
+        self.params['guidata'].user_actions = GuiData.ACTIONS_DISABLE
         
       
         
@@ -118,9 +115,9 @@ class myModel(QtGui.QStandardItemModel):
         
         #get rows from DB
         if (parameter == None):                
-            rows = self.db.getAll(self.name)
+            rows = self.params['db'].getAll(self.params['name'])
         else:
-            rows = self.db.getParX(self.name, parameter, value)
+            rows = self.params['db'].getParX(self.params['name'], parameter, value)
         
         
                                     
@@ -128,7 +125,7 @@ class myModel(QtGui.QStandardItemModel):
         for row in rows:            
             
             #convert "db-row" to dict (in dict can be added record)
-            row_dict = self.db.dict_factory(rows, row)
+            row_dict = self.params['db'].dict_factory(rows, row)
             
             #call table-specific function, return "table-row"                               
             row_table = self.db2tableRow(row_dict)                                                                                                
@@ -139,7 +136,7 @@ class myModel(QtGui.QStandardItemModel):
         #except:
         #    print "I: DB ",self.name,": is empty! "
             
-        self.guidata.user_actions = GuiData.ACTIONS_ENABLE
+        self.params['guidata'].user_actions = GuiData.ACTIONS_ENABLE
         
                                                         
     def addRow_old(self, row):
@@ -194,57 +191,28 @@ class myProxyModel(QtGui.QSortFilterProxyModel):
 
 
 class myTable():
-    def  __init__(self, name, view, db, guidata, keys):                
-                
-        
+    def  __init__(self, params):                
+                        
         #name
-        self.name = name
-        
-        #common Gui data
-        self.guidata = guidata
-        
-        #create MODEL
-        #self.model = UsersModel(db, guidata, keys)        
-        
-        #create PROXY MODEL
-        #self.proxy_model = UsersProxyModel() 
-        
+        self.params = params        
         
         #assign MODEL to PROXY MODEL
-        self.proxy_model.setSourceModel(self.model)
-        
-        #assign PROXY MODEL to VIEW
-        '''self.view = view 
-        self.view.setModel(self.proxy_model)
-        self.view.setRootIsDecorated(False)
-        self.view.setAlternatingRowColors(True)        
-        self.view.setSortingEnabled(True)
-        self.view.setColumnWidth(0,50)
-        self.view.setColumnWidth(1,50)
-        self.view.setColumnWidth(2,150)
-        self.view.setColumnWidth(3,150)
-        self.view.setColumnWidth(4,150)'''        
+        self.proxy_model.setSourceModel(self.model)               
         
         #TIMERs
         self.timer1s = QtCore.QTimer(); 
         self.timer1s.start(1000);
         
         #MODE EDIT/REFRESH        
-        self.mode = MODE_EDIT
-               
-        self.db = db
-        
-        self.keys = keys
-        
+        self.mode = MODE_EDIT                     
                 
         self.createSlots()
         
     def createSlots(self):
-        print "I: XX:",self.name," vytvarim sloty.."
+        print "I: XX:",self.params['name']," vytvarim sloty.."
         
-        QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
-        # DATA_CHANGED - zpetny zapis do DB, shozeni no_update
-        #QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
+        QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);        
+        
         
     #=======================================================================
     # SLOTS
@@ -252,7 +220,7 @@ class myTable():
         
     #UPDATE TIMER    
     def slot_Timer1s(self):         
-        if (self.guidata.mode == GuiData.MODE_REFRESH): 
+        if (self.params['guidata'].mode == GuiData.MODE_REFRESH): 
             self.update()    #update table              
         
     def export_csv(self, filename, source='table'):
@@ -261,7 +229,7 @@ class myTable():
         #FROM TABLE 
         if(source == 'table'):
             #get table as lists; save into file in csv format                
-            aux_csv.save(self.proxy_model.lists(), keys = self.keys) 
+            aux_csv.save(self.proxy_model.lists(), keys = self.params['keys']) 
         
         #FROM DB
         elif(source == 'db'):
@@ -272,14 +240,14 @@ class myTable():
                 conditions.append(['id', id])
                             
             #get db as tuples; save into file in csv format
-            rows = self.db.getParXX(self.name, conditions, 'OR')
+            rows = self.params['db'].getParXX(self.params['name'], conditions, 'OR')
             aux_csv.save(rows)
             
     def update(self):
                     
         #get row-selection
         try:
-            rows = self.view.selectionModel().selectedRows()         
+            rows = self.params['view'].selectionModel().selectedRows()         
             model_index = rows[0] #selected row index #row = rows[0].row() if rows else 0        
         except:
             pass 
@@ -289,18 +257,18 @@ class myTable():
             
         #row-selection back                           
         try: 
-            self.view.selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent) #self.tables_info['runs']['selection']            
+            self.params['view'].selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent) #self.tables_info['runs']['selection']            
         except:
             pass
         
          
         
     def delete(self):
-        self.db.delete(self.name)
+        self.params['db'].delete(self.params['name'])
         self.model.update()
         
     def deleteAll(self):
-        self.db.deleteAll(self.name)
+        self.params['db'].deleteAll(self.params['name'])
         self.model.update()
         
                                         
@@ -327,13 +295,13 @@ class myTable():
             
             #ADD USER
             try:            
-                self.db.insert_from_dict("users", user_db)
+                self.params['db'].insert_from_dict("users", user_db)
                 state['ok'] += 1
             
             except:
                 state['ko'] += 1 #increment errors for error message
 
-        self.db.commit()                
+        self.params['db'].commit()                
         self.model.update()
         
         return state 

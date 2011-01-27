@@ -11,11 +11,34 @@ from PyQt4 import QtCore, QtGui
 import ewitis.gui.myModel as myModel
 import ewitis.gui.GuiData as GuiData
 
+
+class RunsParameters():
+    def __init__(self, source):
+        
+        self.params = {}
+        
+        #table and db table name
+        self.params['name'] = "runs"  
+        
+        #table keys
+        self.params['keys'] = ["id", "date", "name", "description"]
+        
+        #db for acces
+        self.params['db'] = source.db
+        
+        #guidata
+        self.params['guidata'] = source.GuiData
+        
+        #view
+        self.params['view'] = source.ui.RunsProxyView
+                 
+        
+
 class RunsModel(myModel.myModel):
-    def __init__(self, view, name, db, guidata, keys):                        
+    def __init__(self, params):                        
         
         #create MODEL and his structure
-        myModel.myModel.__init__(self, view, name, db, guidata, keys)
+        myModel.myModel.__init__(self, params)
         
         self.update() 
                 
@@ -33,7 +56,7 @@ class RunsModel(myModel.myModel):
     def db2tableRow(self, run):                        
         
         #get USER
-        user = self.db.getParX("users", "id", run["name_id"]).fetchone()
+        user = self.params['db'].getParX("users", "id", run["name_id"]).fetchone()
         
         #exist user?
         if user == None:
@@ -64,52 +87,35 @@ class RunsProxyModel(myModel.myProxyModel):
     
 # view <- proxymodel <- model 
 class Runs(myModel.myTable):
-    def  __init__(self, view, db, guidata, ui):                        
-        
-        name = "runs"
-        keys = ["id", "date", "name", "description"]
-        
-        self.ui = ui
-        
+    def  __init__(self, params):                        
+                
         #create MODEL
-        self.model = RunsModel(view, name, db, guidata, keys)        
+        self.model = RunsModel(params)        
         
         #create PROXY MODEL        
         self.proxy_model = RunsProxyModel()
         
-        myModel.myTable.__init__(self, name, view, db, guidata, keys)
+        myModel.myTable.__init__(self, params)
         
         
         #assign MODEL to PROXY MODEL
         #self.proxy_model.setSourceModel(self.model)
         
         #assign PROXY MODEL to VIEW        
-        self.view = view 
-        self.view.setModel(self.proxy_model)
-        self.view.setRootIsDecorated(False)
-        self.view.setAlternatingRowColors(True)        
-        self.view.setSortingEnabled(True)
-        self.view.setColumnWidth(0,40)
-        self.view.setColumnWidth(1,100)
-        self.view.setColumnWidth(2,100)
-        self.view.setColumnWidth(3,100)
+        #self.view = view 
+        self.params['view'].setModel(self.proxy_model)
+        self.params['view'].setRootIsDecorated(False)
+        self.params['view'].setAlternatingRowColors(True)        
+        self.params['view'].setSortingEnabled(True)
+        self.params['view'].setColumnWidth(0,40)
+        self.params['view'].setColumnWidth(1,100)
+        self.params['view'].setColumnWidth(2,100)
+        self.params['view'].setColumnWidth(3,100)
     
         
         #MODE EDIT/REFRESH        
         self.system = 0 
         
-                                            
-        #QtCore.QObject.connect(self.view, QtCore.SIGNAL("doubleClicked(QModelIndex)"), self.slot_Entered)
-        #QtCore.QObject.connect(self.timer1s, QtCore.SIGNAL("timeout()"), self.slot_Timer1s);
-        #QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)        
-        
-    #=======================================================================
-    # SLOTS
-    #=======================================================================                
-
-
-    #UPDATE TABLE        
-    #def update(self):                                        
-    #    self.model.update()  #update model                                           
+                                   
          
                                

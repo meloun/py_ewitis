@@ -7,18 +7,43 @@ import ewitis.gui.myModel as myModel
 import ewitis.gui.GuiData as GuiData
 
 
+class TimesParameters():
+    def __init__(self, source):
+        
+        self.params = {}
+        
+        #table and db table name
+        self.params['name'] = "times"  
+        
+        #table keys
+        self.params['keys'] = ["id", "nr", "time", "name", "kategory", "address"]
+        
+        #db for acces
+        self.params['db'] = source.db
+        
+        #guidata
+        self.params['guidata'] = source.GuiData
+        
+        #view
+        self.params['view'] = source.ui.TimesProxyView
+                 
+        
+        
+    
+
 class TimesModel(myModel.myModel):
-    def __init__(self, view, name, db, guidata, keys):                        
+    def __init__(self, params):                        
                 
         
         #create MODEL and his structure
-        myModel.myModel.__init__(self, view, name, db, guidata, keys)
+
+        myModel.myModel.__init__(self, params)
         
         self.showall = False
         
         
         #update with first run        
-        first_run = self.db.getFirst("runs")
+        first_run = self.params['db'].getFirst("runs")
         if(first_run != None):
             self.run_id = first_run['id']
         else:
@@ -43,7 +68,7 @@ class TimesModel(myModel.myModel):
         #print time_db
         
         #get USER
-        user_db = self.db.getParX("users", "id", time_db["user_id"]).fetchone()
+        user_db = self.params['db'].getParX("users", "id", time_db["user_id"]).fetchone()
         
         #exist user?
         if user_db == None:
@@ -66,23 +91,9 @@ class TimesModel(myModel.myModel):
         return time_table
     
     def table2dbRow(self, tabTime): 
-        #prepare data
-        #aux_id = self.model.item(a.row(), 0).text()            
-        #aux_time = self.model.item(a.row(), 2).text()
-        #aux_nr = self.model.item(a.row(), 1).text()
-        
-        #find user par nr (from user table)
-        #try:            
-        #    user = self.db.getParX("users", "nr", tabTime['nr']).fetchone()
-        #    aux_dict = {"id" : aux_id, "user_id": aux_user["id"], "time_str" : aux_time}
-        #except:
-        #    aux_dict = {"id" : aux_id, "time_str" : aux_time}
-        #    print "E: Times: unknown user"
             
-        user = self.db.getParX("users", "nr", tabTime['nr']).fetchone()
+        user = self.params['db'].getParX("users", "nr", tabTime['nr']).fetchone()
         
-        print "user: ",user
-        print "tabTime: ",tabTime
         
         if(user == None):
             dbTime = {'id': tabTime['id'], 'time_str' : tabTime['time']}
@@ -111,73 +122,47 @@ class TimesProxyModel(myModel.myProxyModel):
         
         #create PROXYMODEL
         myModel.myProxyModel.__init__(self)  
-        
-
-
-
+    
    
 # view <- proxymodel <- model 
 class Times(myModel.myTable):
-    def  __init__(self, view, db, guidata):  
+#    def  __init__(self, view, db, guidata):  
+    def  __init__(self, params):
         
-        #table and db table name
-        name = "times"  
-        
-        #table keys
-        keys = ["id", "nr", "time", "name", "kategory", "address"]
-        
-                                            
-        
+        self.params = params               
+                                                    
         #create MODEL
-        self.model = TimesModel(view, name, db, guidata, keys)        
+        self.model = TimesModel(params)        
         
         #create PROXY MODEL
         self.proxy_model = TimesProxyModel() 
         
-        myModel.myTable.__init__(self, name, view, db, guidata, keys)
+        myModel.myTable.__init__(self, params)
         
         
         #assign MODEL to PROXY MODEL
         #self.proxy_model.setSourceModel(self.model)
         
-        #assign PROXY MODEL to VIEW
-        self.view = view 
-        self.view.setModel(self.proxy_model)
-        self.view.setRootIsDecorated(False)
-        self.view.setAlternatingRowColors(True)        
-        self.view.setSortingEnabled(True)
-        self.view.setColumnWidth(0,40)
-        self.view.setColumnWidth(1,40)
-        self.view.setColumnWidth(2,100)
-        self.view.setColumnWidth(3,100)
-        self.view.setColumnWidth(4,60)
-        self.view.setColumnWidth(5,100)
+        #assign PROXY MODEL to VIEW        
+        self.params['view'].setModel(self.proxy_model)
+        self.params['view'].setRootIsDecorated(False)
+        self.params['view'].setAlternatingRowColors(True)        
+        self.params['view'].setSortingEnabled(True)
+        self.params['view'].setColumnWidth(0,40)
+        self.params['view'].setColumnWidth(1,40)
+        self.params['view'].setColumnWidth(2,80)
+        self.params['view'].setColumnWidth(3,100)
+        self.params['view'].setColumnWidth(4,80)
+        self.params['view'].setColumnWidth(5,100)
         
         #TIMERs
         self.timer1s = QtCore.QTimer(); 
         self.timer1s.start(1000);
         
         #MODE EDIT/REFRESH        
-        self.system = 0 
-               
-        self.db = db
+        self.system = 0                                                        
         
-        #self.keys = keys
-        
-        #$self.updateModel()        
-        #self.createSlots()
-        
-    def createSlots(self):
-        print "I: Runs: vytvarim sloty.."
-        
-        # DOUBLE_CLICKED - nahazuje no_update aby se updatem nerusila moznost editace
-        #QtCore.QObject.connect(self.view, QtCore.SIGNAL("doubleClicked(QModelIndex)"), self.slot_Entered)
-        
-        # ACTIVATED -vznika jen u NOT editable, shazuje no_update 
-        #QtCore.QObject.connect(self.proxy_model, QtCore.SIGNAL("entered(QModelIndex)"), self.slot_Entered2)
-        
-        # DATA_CHANGED - zpetny zapis do DB, shozeni no_update
-        #QtCore.QObject.connect(self.model, QtCore.SIGNAL("dataChanged(QModelIndex, QModelIndex )"), self.slot_ModelChanged)
+
                
     #=======================================================================
     # SLOTS
@@ -189,7 +174,7 @@ class Times(myModel.myTable):
     def slot_ModelChanged_old(self,a,b):
         
         #user change, no auto update
-        if((self.guidata.mode == GuiData.MODE_EDIT) and (self.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                  
+        if((self.params['guidata'].mode == GuiData.MODE_EDIT) and (self.params['guidata'].user_actions == GuiData.ACTIONS_ENABLE)):                  
             #prepare data
             aux_id = self.model.item(a.row(), 0).text()            
             aux_time = self.model.item(a.row(), 2).text()
@@ -197,23 +182,19 @@ class Times(myModel.myTable):
             
             #find user par nr (from user table)
             try:            
-                aux_user = self.db.getParX("users", "nr", aux_nr).fetchone()
+                aux_user = self.params['db'].getParX("users", "nr", aux_nr).fetchone()
                 aux_dict = {"id" : aux_id, "user_id": aux_user["id"], "time_str" : aux_time}
             except:
                 aux_dict = {"id" : aux_id, "time_str" : aux_time}
                 print "E: Times: unknown user" 
                                                             
             #replace                         
-            self.db.update_from_dict("times", aux_dict)
+            self.params['db'].update_from_dict("times", aux_dict)
             
             print "replacing.. ", self.run_id, aux_dict 
             time.sleep(0.1)  
             self.update(self.run_id)                    
-        
-    
-    #UPDATE TABLE        
-    def update(self, run_id = None):                     
-        self.model.update(run_id)                                                                                    
+                                                                                            
     
 
             
