@@ -208,11 +208,11 @@ class sqlite_db(object):
         for row in rows:                                                              
                                                       
             #ADD USER
-            #try:            
-            self.insert_from_dict(tablename, dict(zip(keys, row)), commit = False)
-            state['ok'] += 1            
-            #except:
-            #    state['ko'] += 1 #increment errors for error message
+            try:            
+                self.insert_from_dict(tablename, dict(zip(keys, row)), commit = False)
+                state['ok'] += 1            
+            except:
+                state['ko'] += 1 #increment errors for error message
 
         self.db.commit()                        
         

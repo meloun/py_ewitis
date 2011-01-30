@@ -44,7 +44,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self, parent)
         self.port_state = 0
         self.ui = Ui_App.Ui_MainWindow()
-        self.ui.setupUi(self)                                                                 
+        self.ui.setupUi(self)                
+                                                                     
         
         #GUI SHM
         self.ShaMem_gui = ShaMem_gui
@@ -75,10 +76,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #=======================================================================
         self.GuiData = GuiData.GuiData()
         self.R = RunsModel.Runs( RunsModel.RunsParameters(self).params )
-        self.R.update()        
-        #self.T = TimesModel.Times(self.ui.TimesProxyView, self.db, self.GuiData)
+        self.R.update()                
         self.T = TimesModel.Times( TimesModel.TimesParameters(self).params )
-        self.updateTimes()
+        #self.updateTimes()
         
         self.U = UsersModel.Users( UsersModel.UsersParameters(self).params)
         self.U.model.update()
@@ -100,34 +100,32 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #class for adding and manage signals and slots
         AddSignal =  Ui_Slots.AddSignal(self)       
         
-        AddSignal.table(self.R, 
+        '''AddSignal.table(self.R, 
                 self.ui.RunsFilterLineEdit, self.ui.RunsFilterClear,
-                self.ui.RunsExport, self.ui.RunsExport,
+                self.ui.RunsAdd, self.ui.RunsRemove,
                 self.ui.RunsExport, None, 
                 self.ui.RunsDelete,
-                self.ui.runsCounter)
+                self.ui.runsCounter)'''
         
-        AddSignal.table(self.T, 
+        '''AddSignal.table(self.T, 
                         self.ui.TimesFilterLineEdit, self.ui.TimesFilterClear,
-                        self.ui.TimesExport, self.ui.TimesExport,
+                        self.ui.TimesAdd, self.ui.TimesRemove,
                         self.ui.TimesExport, None, 
                         self.ui.TimesDelete,
                         self.ui.timesCounter)
         
         AddSignal.table(self.U, 
                 self.ui.UsersFilterLineEdit, self.ui.UsersFilterClear,
-                self.ui.UsersImport, self.ui.UsersImport,
+                self.ui.UsersAdd, self.ui.UsersRemove,
                 self.ui.UsersExport, self.ui.UsersImport, 
                 self.ui.UsersDelete,
-                self.ui.usersCounter)                                                                  
+                self.ui.usersCounter)'''                                                                  
         #COMM
         self.ShaMem_comm = ShaMem_comm                
                        
         self.myManageComm = manage_comm.ManageComm(ShaMem_comm = self.ShaMem_comm) #COMM instance
         self.myManageComm.start() #start thread, 'run' flag should be 0, so this thread ends immediatelly
-        
-    def ehm(self):
-        print "mandolin"    
+          
     def __del__(self):
         print "GUI: mazu instanci.."                                                              
 
@@ -137,14 +135,16 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                          
         #ziskani oznaceneho radku z tableRuns 
         rows = self.ui.RunsProxyView.selectionModel().selectedRows()
+                                      
+        #update table times with run_id
+        try: 
             
-        #ziskani id z vybraneho radku   
-        try:                      
-            run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
-                                             
+            #ziskani id z vybraneho radku                             
+            run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()        
+                                         
             #get TIMES from database & add them to the table
             self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
-            self.T.update(run_id)             
+            self.T.update(run_id = run_id)             
             self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
         except:
             print "I: Times: nelze aktualizovat!"
@@ -157,9 +157,18 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                 QtGui.QMessageBox.warning(self, title, message)            
             elif(type=='info'):
                 QtGui.QMessageBox.information(self, title, message)
+            elif(type=='warning_dialog'):
+                ret = QtGui.QMessageBox.warning(self, title, message, QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes)                
+                if (ret != QtGui.QMessageBox.Yes):
+                    return False
+                message = "succesfully"
+            
         #STATUSBAR        
         if(statusbar):
-            self.ui.statusbar.showMessage(title+" : " + message)    
+            self.ui.statusbar.showMessage(title+" : " + message)
+        
+        return True
+        
          
     def start(self):
         self.app = QtGui.QApplication(sys.argv)
@@ -192,9 +201,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         
         
     def sRunsProxyView_SelectionChanged(self, selected, deselected):               
-        if(selected):
-            #print "selection changed"  
-            self.updateTimes()  #update TIMES table
+        if(selected):            
+            self.updateTimes()  #update TIMES table            
             
     def sEditMode(self):
         print "I: switching to editing mode.."

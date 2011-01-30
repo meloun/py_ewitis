@@ -12,10 +12,13 @@ import ewitis.gui.myModel as myModel
 import ewitis.gui.GuiData as GuiData
 
 
-class RunsParameters():
+class RunsParameters(myModel.myParameters):
     def __init__(self, source):
         
-        self.params = {}
+        
+        #create MODEL and his structure
+        myModel.myParameters.__init__(self, source)
+                
         
         #table and db table name
         self.params['name'] = "runs"  
@@ -28,9 +31,26 @@ class RunsParameters():
         
         #guidata
         self.params['guidata'] = source.GuiData
-        
-        #view
+                
+        #=======================================================================
+        # GUI
+        #=======================================================================
+        #VIEW
         self.params['view'] = source.ui.RunsProxyView
+        
+        #FILTER
+        self.params['filter'] = source.ui.RunsFilterLineEdit
+        self.params['filterclear'] = source.ui.RunsFilterClear
+        
+        #GROUPBOX
+        self.params['add'] = source.ui.RunsAdd
+        self.params['remove'] =  source.ui.RunsRemove
+        self.params['export'] = source.ui.RunsExport
+        self.params['import'] = None 
+        self.params['delete'] = source.ui.RunsDelete
+        
+        #COUNTER
+        self.params['counter'] = source.ui.runsCounter
                  
         
 

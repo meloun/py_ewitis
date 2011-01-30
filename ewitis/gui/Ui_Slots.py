@@ -23,8 +23,11 @@ class AddSignal():
         # FILTER CHANGE -> CHANGE TABLE
         QtCore.QObject.connect(filter, QtCore.SIGNAL("textChanged (const QString & )"), lambda : self.sFilterRegExp(filter, table, label_counter))
         
-        # EXPORT BUTTON -> EXPORT CSV
-        QtCore.QObject.connect(btn_export, QtCore.SIGNAL("clicked()"), lambda : self.sExport(table))
+        # ADD ROW BUTTON
+        QtCore.QObject.connect(btn_add, QtCore.SIGNAL("clicked()"), lambda : self.sAdd(table))
+        
+        # REMOVE ROW BUTTON
+        QtCore.QObject.connect(btn_remove, QtCore.SIGNAL("clicked()"), lambda : self.sRemove(table))
         
         # IMPORT BUTTON -> CHANGE TABLE
         if (btn_import != None):
@@ -48,6 +51,17 @@ class AddSignal():
     
      
     
+    # ADD ROW               
+    def sAdd(self, table):
+        print "add row", table.params['name']
+        #table.model.addRow({'id':12})
+        
+    # REMOVE ROW               
+    def sRemove(self, table):
+        print "remove row", table.params['name']
+        
+        
+        
     # IMPORT
     # CSV FILE => DB               
     def sImport(self, table): 

@@ -7,10 +7,13 @@ import ewitis.gui.myModel as myModel
 import ewitis.gui.GuiData as GuiData
 
 
-class TimesParameters():
+class TimesParameters(myModel.myParameters):
     def __init__(self, source):
         
-        self.params = {}
+        #create MODEL and his structure
+        myModel.myParameters.__init__(self, source)
+        
+        self.params['ui']  = source.ui
         
         #table and db table name
         self.params['name'] = "times"  
@@ -23,9 +26,26 @@ class TimesParameters():
         
         #guidata
         self.params['guidata'] = source.GuiData
-        
-        #view
+                                
+        #=======================================================================
+        # GUI
+        #=======================================================================
+        #VIEW
         self.params['view'] = source.ui.TimesProxyView
+        
+        #FILTER
+        self.params['filter'] = source.ui.TimesFilterLineEdit
+        self.params['filterclear'] = source.ui.TimesFilterClear
+        
+        #GROUPBOX
+        self.params['add'] = source.ui.TimesAdd
+        self.params['remove'] =  source.ui.TimesRemove
+        self.params['export'] = source.ui.TimesExport
+        self.params['import'] = None 
+        self.params['delete'] = source.ui.TimesDelete
+        
+        #COUNTER
+        self.params['counter'] = source.ui.timesCounter
                  
         
         
@@ -160,7 +180,10 @@ class Times(myModel.myTable):
         self.timer1s.start(1000);
         
         #MODE EDIT/REFRESH        
-        self.system = 0                                                        
+        self.system = 0
+            
+    def update(self, run_id = None):
+        self.model.update(run_id = run_id)                                                    
         
 
                

@@ -8,11 +8,13 @@ import ewitis.gui.GuiData as GuiData
 import libs.db_csv.db_csv as Db_csv
 
 
-class UsersParameters():
+class UsersParameters(myModel.myParameters):
     def __init__(self, source):
         
-        self.params = {}
+        #create MODEL and his structure
+        myModel.myParameters.__init__(self, source)
         
+                      
         #table and db table name
         self.params['name'] = "users"  
         
@@ -25,8 +27,29 @@ class UsersParameters():
         #guidata
         self.params['guidata'] = source.GuiData
         
-        #view
+
+        
+        #=======================================================================
+        # GUI
+        #=======================================================================
+        #VIEW        
         self.params['view'] = source.ui.UsersProxyView
+        
+        #FILTER
+        self.params['filter'] = source.ui.UsersFilterLineEdit
+        self.params['filterclear'] = source.ui.UsersFilterClear
+        
+        #GROUPBOX
+        self.params['add'] = source.ui.UsersAdd
+        self.params['remove'] =  source.ui.UsersRemove
+        self.params['export'] = source.ui.UsersExport
+        self.params['import'] = source.ui.UsersImport 
+        self.params['delete'] = source.ui.UsersDelete
+        
+        #COUNTER
+        self.params['counter'] = source.ui.usersCounter
+        
+        
 
 class UsersModel(myModel.myModel):
     def __init__(self, params):                        
