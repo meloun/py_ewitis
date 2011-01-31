@@ -39,7 +39,7 @@ class sqlite_db(object):
         return res 
             
     def query(self, query):
-        #print "query: ",query
+        print "query: ",query
         res = self.db.execute(query)                
         return res
         
@@ -79,6 +79,11 @@ class sqlite_db(object):
         
         res = self.query(query)
         return res
+    
+    def getMax(self, tablename, parameter):
+        query = "select max("+parameter+") from "+tablename        
+        res = self.query(query)
+        return res.fetchone()[0]
 
     ###########
     # INSERT
@@ -176,7 +181,7 @@ class sqlite_db(object):
     # DELETE
     ###########                
     def delete(self, tablename, id):
-        query = "delete from " + tablename
+        query = "delete from " + tablename + " where id = " + str(id)
         
         res = self.query(query)
         self.db.commit()

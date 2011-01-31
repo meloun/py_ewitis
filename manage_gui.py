@@ -95,31 +95,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.aEditMode, QtCore.SIGNAL("activated()"), self.sEditMode)
         QtCore.QObject.connect(self.ui.tabWidget, QtCore.SIGNAL("currentChanged (int)"), self.sTabChanged)
         QtCore.QObject.connect(self.ui.TimesShowAll, QtCore.SIGNAL("stateChanged (int)"), self.sTimesShowAllChanged)
-        
-        #SIGNALs & SLOTs
-        #class for adding and manage signals and slots
-        AddSignal =  Ui_Slots.AddSignal(self)       
-        
-        '''AddSignal.table(self.R, 
-                self.ui.RunsFilterLineEdit, self.ui.RunsFilterClear,
-                self.ui.RunsAdd, self.ui.RunsRemove,
-                self.ui.RunsExport, None, 
-                self.ui.RunsDelete,
-                self.ui.runsCounter)'''
-        
-        '''AddSignal.table(self.T, 
-                        self.ui.TimesFilterLineEdit, self.ui.TimesFilterClear,
-                        self.ui.TimesAdd, self.ui.TimesRemove,
-                        self.ui.TimesExport, None, 
-                        self.ui.TimesDelete,
-                        self.ui.timesCounter)
-        
-        AddSignal.table(self.U, 
-                self.ui.UsersFilterLineEdit, self.ui.UsersFilterClear,
-                self.ui.UsersAdd, self.ui.UsersRemove,
-                self.ui.UsersExport, self.ui.UsersImport, 
-                self.ui.UsersDelete,
-                self.ui.usersCounter)'''                                                                  
+                                                                         
         #COMM
         self.ShaMem_comm = ShaMem_comm                
                        
@@ -140,7 +116,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         try: 
             
             #ziskani id z vybraneho radku                             
-            run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()        
+            #run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
+            run_id = self.R.proxy_model.data(rows[0]).toString()
+            print "run_id: ", run_id         
                                          
             #get TIMES from database & add them to the table
             self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
@@ -162,6 +140,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                 if (ret != QtGui.QMessageBox.Yes):
                     return False
                 message = "succesfully"
+            elif(type=='input_integer'):
+                i, ok = QtGui.QInputDialog.getInteger(self, title, message)
+                return i
             
         #STATUSBAR        
         if(statusbar):

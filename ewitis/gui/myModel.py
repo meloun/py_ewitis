@@ -226,6 +226,9 @@ class myTable():
                 
         self.createSlots()
         
+        #update "Counter"
+        self.sFilterRegExp()
+        
     def createSlots(self):
         print "I: ",self.params['name']," vytvarim sloty.."
         
@@ -242,7 +245,7 @@ class myTable():
         QtCore.QObject.connect(self.params['add'], QtCore.SIGNAL("clicked()"), self.sAdd)
         
         # REMOVE ROW BUTTON
-        QtCore.QObject.connect(self.params['remove'], QtCore.SIGNAL("clicked()"), self.sRemove)
+        QtCore.QObject.connect(self.params['remove'], QtCore.SIGNAL("clicked()"), self.sDelete)
         
         # IMPORT BUTTON -> CHANGE TABLE
         if (self.params['import'] != None):
@@ -278,12 +281,36 @@ class myTable():
          
     # ADD ROW               
     def sAdd(self):
-        print "addd row", self.params['name']
-        #table.model.addRow({'id':12})
+        title = "table "+self.params['name']+" Add record"
+        myint = self.params['showmessage'](title,"text", type="input_integer")
+        res = self.params['db'].getParId(self.params['name'], myint).fetchone()
+        if(res):
+            self.params['showmessage'](title,"Record with this ID already exist!")
+            return
+        else:
+            maxid = self.params['db'].getMax(self.params['name'], 'id')
+            print "NE", maxid, type(maxid)
+     
+        #self.model.addRow({'id':12})
         
     # REMOVE ROW               
-    def sRemove(self):
-        print "remove row", self.params['name']
+    def sDelete(self):
+        print "remove row", self.params['name']        
+        
+        #title
+        title = "Table '"+self.params['name'] + "' Delete record"
+                        
+        #get selected id
+        try:                     
+            rows = self.params['view'].selectionModel().selectedRows()                        
+            id = self.proxy_model.data(rows[0]).toString()
+        except:
+            self.params['showmessage'](title, "Nelze smazat")
+            
+        #confirm dialog and delete
+        if (self.params['showmessage'](title, "Are you sure you want to delete 1 record from table '"+self.params['name']+"' ? \n (id="+str(id)+")", type='warning_dialog')):                        
+            self.delete(id)                          
+                                                      
         
     # IMPORT
     # CSV FILE => DB               
@@ -303,24 +330,16 @@ class myTable():
             self.model.update()
             self.sImportDialog(state)
         except sqlite.CSV_FILE_Error:
-            self.gui.showMessage(self.params['name']+" CSV Import", "NOT Succesfully imported\n wrong file format")
-        #except:
-        #    self.gui.showMessage(table.name+" CSV Import", "nothing imported", type="info", dialog=False)
-            
-            
-        
-    def sImportDialog(self, state):               
-        #error message
-        
+            self.params['showmessage'](self.params['name']+" CSV Import", "NOT Succesfully imported\n wrong file format")
+                                
+    def sImportDialog(self, state):                            
         #title
         title = "Table '"+self.params['name'] + "' CSV Import"
         
         if(state['ko'] != 0) :
-            self.params['showmessage'](title, "NOT Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.\n"+str(state['ko'])+" record(s) NOT imported.\n\n Probably already exist.")                                               
-            #self.params['ui'].mainwindow.showMessage(title, "NOT Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.\n"+str(state['ko'])+" record(s) NOT imported.\n\n Probably already exist.") 
+            self.params['showmessage'](title, "NOT Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.\n"+str(state['ko'])+" record(s) NOT imported.\n\n Probably already exist.")                                                            
         else:
-            self.params['showmessage'](title,"Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.", type='info')                        
-            #self.params['ui'].mainwindow.showMessage(title,"Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.", type='info')                                
+            self.params['showmessage'](title,"Succesfully"+"\n\n" +str(state['ok'])+" record(s) imported.", type='info')                                               
         
     # EXPORT
     # WEB (or DB) => CSV FILE
@@ -380,7 +399,7 @@ class myTable():
         #get row-selection
         try:
             rows = self.params['view'].selectionModel().selectedRows()         
-            model_index = rows[0] #selected row index #row = rows[0].row() if rows else 0        
+            model_index = rows[0] #selected row index #row = rows[0].row() if rows else 0         
         except:
             pass 
         
@@ -389,14 +408,15 @@ class myTable():
             
         #row-selection back                           
         try: 
-            self.params['view'].selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent) #self.tables_info['runs']['selection']            
+            self.params['view'].selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent)            
         except:
             pass
-        
-         
-        
-    def delete(self):
-        self.params['db'].delete(self.params['name'])
+                         
+    def delete(self, id):
+
+        self.params['db'].delete(self.params['name'], id)                          
+
+
         self.model.update()
         
     def deleteAll(self):

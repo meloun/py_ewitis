@@ -9,7 +9,7 @@ import libs.db_csv.db_csv as Db_csv
 import libs.sqlite.sqlite as sqlite
 
 
-class AddSignal():
+class AddSignal_old():
     def __init__(self, gui):
         self.gui = gui
         
