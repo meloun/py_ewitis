@@ -63,7 +63,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         # DATABASE
         #=======================================================================
         try:           
-            self.db = sqlite.sqlite_db("export/sqlite/test_db.sqlite")
+            self.db = sqlite.sqlite_db("db/test_db.sqlite")
         
             '''connect to db'''  
             self.db.connect()
@@ -95,6 +95,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.aEditMode, QtCore.SIGNAL("activated()"), self.sEditMode)
         QtCore.QObject.connect(self.ui.tabWidget, QtCore.SIGNAL("currentChanged (int)"), self.sTabChanged)
         QtCore.QObject.connect(self.ui.TimesShowAll, QtCore.SIGNAL("stateChanged (int)"), self.sTimesShowAllChanged)
+        QtCore.QObject.connect(self.ui.timesShowZero, QtCore.SIGNAL("stateChanged (int)"), self.sTimesShowZeroChanged)
                                                                          
         #COMM
         self.ShaMem_comm = ShaMem_comm                
@@ -109,14 +110,13 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
     # function for update table TIMES according to selection in RUNS
     def updateTimes(self):         
                          
-        #ziskani oznaceneho radku z tableRuns 
-        rows = self.ui.RunsProxyView.selectionModel().selectedRows()
+        #get index of selected ID (from tableRuns) 
+        rows = self.ui.RunsProxyView.selectionModel().selectedRows() #default collumn = 0
                                       
         #update table times with run_id
         try: 
             
-            #ziskani id z vybraneho radku                             
-            #run_id = self.R.proxy_model.data(self.R.proxy_model.index(rows[0].row(), 0)).toString()
+            #ziskani id z vybraneho radku                                         
             run_id = self.R.proxy_model.data(rows[0]).toString()
             print "run_id: ", run_id         
                                          
@@ -127,7 +127,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         except:
             print "I: Times: nelze aktualizovat!"
     
-    def showMessage(self, title, message, type='warning', dialog=True, statusbar=True):
+    def showMessage(self, title, message, type='warning', dialog=True, statusbar=True, value=0):
         
         #DIALOG
         if(dialog):                                
@@ -141,7 +141,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                     return False
                 message = "succesfully"
             elif(type=='input_integer'):
-                i, ok = QtGui.QInputDialog.getInteger(self, title, message)
+                i, ok = QtGui.QInputDialog.getInteger(self, title, message, value=value)
                 return i
             
         #STATUSBAR        
@@ -178,6 +178,13 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             self.T.model.showall = False
         elif(state == 2):
             self.T.model.showall = True
+        self.T.update()
+        
+    def sTimesShowZeroChanged(self, state):        
+        if(state == 0):
+            self.T.model.showzero = False
+        elif(state == 2):
+            self.T.model.showzero = True
         self.T.update()
         
         
@@ -272,9 +279,8 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             self.ui.aConnectPort.setText("Disconnect")             
         print "GUI: ",self.ShaMem_comm["run"]
         
-    def sAbout(self):
-        print "GUI: aAbout activated()"                    
-        QtGui.QMessageBox.information(self, "About", "Ewitis \n (c) 2010 \n\n Clever guysClever guysClever guysClever guysClever guysClever guys")                                                
+    def sAbout(self):                           
+        QtGui.QMessageBox.information(self, "About", "Ewitis  - Electronic wireless timing \n\ninfo@ewitis.cz\nwww.ewitis.cz\n\n v0.1\n\n (c) 2011")                                                
 
 class manage_gui():
     def __init__(self):

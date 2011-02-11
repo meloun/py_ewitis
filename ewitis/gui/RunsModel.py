@@ -128,9 +128,9 @@ class Runs(myModel.myTable):
         self.params['view'].setAlternatingRowColors(True)        
         self.params['view'].setSortingEnabled(True)
         self.params['view'].setColumnWidth(0,40)
-        self.params['view'].setColumnWidth(1,100)
-        self.params['view'].setColumnWidth(2,100)
-        self.params['view'].setColumnWidth(3,100)
+        self.params['view'].setColumnWidth(1,120)
+        self.params['view'].setColumnWidth(2,110)
+        self.params['view'].setColumnWidth(3,80)
     
         
         #MODE EDIT/REFRESH        

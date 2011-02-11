@@ -102,6 +102,9 @@ class myModel(QtGui.QStandardItemModel):
     def addRow(self, row):
         nr_column = 0                        
 
+        if (row == {}):            
+            return
+            
         self.insertRow(0)                
                         
         #through defined keys
@@ -125,9 +128,7 @@ class myModel(QtGui.QStandardItemModel):
     def update(self, parameter=None, value=None):
                 
         self.params['guidata'].user_actions = GuiData.ACTIONS_DISABLE
-        
-      
-        
+                      
         #remove all rows
         self.removeRows(0, self.rowCount())  
         
@@ -136,9 +137,7 @@ class myModel(QtGui.QStandardItemModel):
             rows = self.params['db'].getAll(self.params['name'])
         else:
             rows = self.params['db'].getParX(self.params['name'], parameter, value)
-        
-        
-                                    
+                                                    
         #add rows in table
         for row in rows:            
             
@@ -202,8 +201,10 @@ class myProxyModel(QtGui.QSortFilterProxyModel):
         for i in range(self.rowCount()):
             row = []
             for j in range(self.columnCount()):
-                index = self.index(i,j)  
-                row.append(str(self.data(index).toString()))            
+                index = self.index(i,j)
+                mystr1 = self.data(index).toString()                   
+                mystr2 = mystr1.toUtf8()                
+                row.append(mystr2)            
             rows.append(row)
         return rows
 
@@ -276,22 +277,38 @@ class myTable():
     def sFilterRegExp(self):    
         regExp = QtCore.QRegExp(self.params['filter'].text(), QtCore.Qt.CaseInsensitive, QtCore.QRegExp.RegExp)
         self.proxy_model.setFilterRegExp(regExp)
-        self.params['counter'].setText(str(self.proxy_model.rowCount())+"/"+str(self.model.rowCount()))      
-    
-         
+        self.update_counter()
+        #self.params['counter'].setText(str(self.proxy_model.rowCount())+"/"+str(self.model.rowCount()))
+              
+                 
     # ADD ROW               
     def sAdd(self):
         title = "table "+self.params['name']+" Add record"
-        myint = self.params['showmessage'](title,"text", type="input_integer")
-        res = self.params['db'].getParId(self.params['name'], myint).fetchone()
+        
+        max_id = self.params['db'].getMax(self.params['name'], 'id')
+        my_id = self.params['showmessage'](title,"ID: ", type="input_integer", value = max_id + 1)
+                
+        res = self.params['db'].getParId(self.params['name'], my_id).fetchone()
+        
+        #this ID exist?
         if(res):
             self.params['showmessage'](title,"Record with this ID already exist!")
             return
-        else:
-            maxid = self.params['db'].getMax(self.params['name'], 'id')
-            print "NE", maxid, type(maxid)
      
-        #self.model.addRow({'id':12})
+        #get dict for adding
+        row = {}
+        for key in self.params['keys']:
+            row[key] = ''
+        row['id'] = my_id
+                
+        self.model.params['guidata'].user_actions = GuiData.ACTIONS_DISABLE        
+        #self.model.addRow(row)
+        print "NOW"
+        dbRow = self.model.table2dbRow(row)
+        self.params['db'].insert_from_dict(self.params['name'], dbRow)
+        self.model.params['guidata'].user_actions = GuiData.ACTIONS_ENABLE
+        
+        self.params['showmessage'](title,"succesfully (id="+str(my_id)+")", dialog = False)
         
     # REMOVE ROW               
     def sDelete(self):
@@ -355,11 +372,11 @@ class myTable():
         title = "Table '"+self.params['name'] + "' CSV Export"
          
         #export to csv file
-        try:                        
-            self.export_csv(filename, source)                                
-            self.params['showmessage'](title, "Succesfully", dialog=False)            
-        except:            
-            self.params['showmessage'](title, "NOT succesfully \n\nCannot write into the file")
+        #try:                        
+        self.export_csv(filename, source)                                
+        self.params['showmessage'](title, "Succesfully", dialog=False)            
+        #except:            
+        #    self.params['showmessage'](title, "NOT succesfully \n\nCannot write into the file")
                      
                         
     # DELETE BUTTON          
@@ -394,23 +411,30 @@ class myTable():
             rows = self.params['db'].getParXX(self.params['name'], conditions, 'OR')
             aux_csv.save(rows)
             
-    def update(self):
+    def update(self, parameter=None, value=None, selectionback=True):
                     
         #get row-selection
-        try:
-            rows = self.params['view'].selectionModel().selectedRows()         
-            model_index = rows[0] #selected row index #row = rows[0].row() if rows else 0         
-        except:
-            pass 
+        if(selectionback==True):
+            try:
+                rows = self.params['view'].selectionModel().selectedRows()         
+                model_index = rows[0] #selected row index #row = rows[0].row() if rows else 0         
+            except:
+                pass 
         
-        self.model.update()
+        self.model.update(parameter, value)
         
             
-        #row-selection back                           
-        try: 
-            self.params['view'].selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent)            
-        except:
-            pass
+        #row-selection back
+        if(selectionback==True):                           
+            try:                
+                self.params['view'].selectionModel().setCurrentIndex(model_index, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent)            
+            except:
+                pass
+        
+        self.update_counter()
+        
+    def update_counter(self):        
+        self.params['counter'].setText(str(self.proxy_model.rowCount())+"/"+str(self.model.rowCount()))
                          
     def delete(self, id):
 

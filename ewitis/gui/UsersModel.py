@@ -115,7 +115,7 @@ class Users(myModel.myTable):
         self.params['view'].setAlternatingRowColors(True)        
         self.params['view'].setSortingEnabled(True)
         self.params['view'].setColumnWidth(0,40)
-        self.params['view'].setColumnWidth(1,40)
+        self.params['view'].setColumnWidth(1,30)
         self.params['view'].setColumnWidth(2,100)
         self.params['view'].setColumnWidth(3,100)
         self.params['view'].setColumnWidth(4,100)        

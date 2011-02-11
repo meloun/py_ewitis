@@ -30,7 +30,7 @@ class Db_csv():
         return listofnames
     
     #save csv into file from lists
-    def save(self, lists, keys = [], encode = 'utf8'):
+    def save(self, lists, keys = [], encode = None):
         
         my_string = ""
         
@@ -38,10 +38,12 @@ class Db_csv():
         
         for list in lists:        
             my_string += ";".join(str(x) for x in list) + "\n"
-                    
-        my_string = my_string.encode(encode)
+                            
         
-        #print my_string    
+        
+        #print my_string, type(my_string)
+        if encode != None:
+            my_string = my_string.encode(encode)    
         
         FILE = open(self.filename, 'w')
         FILE.write(my_string)

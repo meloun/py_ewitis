@@ -60,6 +60,7 @@ class TimesModel(myModel.myModel):
         myModel.myModel.__init__(self, params)
         
         self.showall = False
+        self.showzero = True
         
         
         #update with first run        
@@ -84,6 +85,13 @@ class TimesModel(myModel.myModel):
     
     #["id", "nr", "time", "name", "kategory", "address"]
     def db2tableRow(self, time_db):
+        
+        
+        #hide all zero time?
+        if(self.showzero == False):
+            if (time_db["time_str"]=="00:00:00,00"):  
+                return {}
+        
         
         #print time_db
         
@@ -182,8 +190,9 @@ class Times(myModel.myTable):
         #MODE EDIT/REFRESH        
         self.system = 0
             
-    def update(self, run_id = None):
-        self.model.update(run_id = run_id)                                                    
+    def update(self, run_id = None):                
+        self.model.update(run_id = run_id)                
+        self.update_counter()                                                    
         
 
                

@@ -81,7 +81,7 @@ class ManageComm(Thread):
         # DATABASE
         #=======================================================================
         try:           
-            self.db = sqlite.sqlite_db("export/sqlite/test_db.sqlite")
+            self.db = sqlite.sqlite_db("db/test_db.sqlite")
             #self.tableTimes = sqlite.sqlite_table(self.db, "times")
             #self.tableRuns = sqlite.sqlite_table(self.db, "runs")
         
