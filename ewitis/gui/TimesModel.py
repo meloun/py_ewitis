@@ -83,13 +83,20 @@ class TimesModel(myModel.myModel):
 
         return myModel.myModel.flags(self, index)
     
+    def getDefaultRow(self): 
+        row = myModel.myModel.getDefaultRow(self)
+        row['nr'] = 1
+        row['time'] = "00:00:00,00"
+        print "timeROOW", row
+        return row 
+    
     #["id", "nr", "time", "name", "kategory", "address"]
     def db2tableRow(self, time_db):
         
         
         #hide all zero time?
         if(self.showzero == False):
-            if (time_db["time_str"]=="00:00:00,00"):  
+            if (time_db["time"]=="00:00:00,00"):  
                 return {}
         
         
@@ -110,7 +117,7 @@ class TimesModel(myModel.myModel):
         time_table = {}
         time_table['id'] = time_db["id"]
         time_table['nr'] = user['nr']
-        time_table['time'] = time_db["time_str"]
+        time_table['time'] = time_db["time"]
         time_table['name'] = user['name']
         time_table['kategory'] = user['kategory']
         time_table['address'] = user['address']
@@ -119,14 +126,15 @@ class TimesModel(myModel.myModel):
         return time_table
     
     def table2dbRow(self, tabTime): 
-            
+                    
+        print "tabTime", tabTime
         user = self.params['db'].getParX("users", "nr", tabTime['nr']).fetchone()
         
         
         if(user == None):
-            dbTime = {'id': tabTime['id'], 'time_str' : tabTime['time']}
+            dbTime = {'id': tabTime['id'], 'run_id':self.run_id, 'time' : tabTime['time']}
         else:
-            dbTime = {'id': tabTime['id'], 'user_id':user['id'], 'time_str' : tabTime['time']} 
+            dbTime = {'id': tabTime['id'], 'run_id':self.run_id, 'user_id':user['id'], 'time' : tabTime['time']} 
                                                                                                                                          
         return dbTime
     
@@ -215,9 +223,9 @@ class Times(myModel.myTable):
             #find user par nr (from user table)
             try:            
                 aux_user = self.params['db'].getParX("users", "nr", aux_nr).fetchone()
-                aux_dict = {"id" : aux_id, "user_id": aux_user["id"], "time_str" : aux_time}
+                aux_dict = {"id" : aux_id, "user_id": aux_user["id"], "time" : aux_time}
             except:
-                aux_dict = {"id" : aux_id, "time_str" : aux_time}
+                aux_dict = {"id" : aux_id, "time" : aux_time}
                 print "E: Times: unknown user" 
                                                             
             #replace                         

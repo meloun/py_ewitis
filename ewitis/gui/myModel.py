@@ -8,7 +8,7 @@ import libs.db_csv.db_csv as Db_csv
 import libs.sqlite.sqlite as sqlite
 
 TABLE_RUNS, TABLE_TIMES, TABLE_USERS = range(3)
-MODE_EDIT, MODE_REFRESH = range(2)
+MODE_EDIT, MODE_LOCK, MODE_REFRESH = range(3)
 SYSTEM_SLEEP, SYSTEM_WORKING = range(2)
 
 #COMMON PARAMETERS for all tables
@@ -46,6 +46,9 @@ class myModel(QtGui.QStandardItemModel):
                     
         print self.params['name']," : vytvarim sloty"
         QtCore.QObject.connect(self, QtCore.SIGNAL("itemChanged(QStandardItem *)"), self.slot_ModelChanged)
+        
+        print self.params['name'], "---->" ,self.params['keys']
+        print "input: ", self.getDefaultRow()
                 
     #MODEL CHANGED - define editable rows
     #first collumn is NOT editable
@@ -62,7 +65,9 @@ class myModel(QtGui.QStandardItemModel):
         if (index.column() == 0):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
-        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable                    
+        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+    
+
         
     #MODEL CHANGED
     #model changed -> save to DB        
@@ -86,6 +91,22 @@ class myModel(QtGui.QStandardItemModel):
             print "I: users: replacing.. ", dbRow            
             self.update()
 
+    
+    def getDefaultRow(self):        
+        row = {}     
+           
+        for key in self.params['keys']:            
+            row[key] = ""
+            
+        
+        if row.has_key('id'):
+            try:
+                row['id'] = self.params['db'].getMax(self.params['name'], 'id') + 1
+            except:
+                row['id'] = 0
+                
+        
+        return row
     
     # get row values in dict
     def getRow(self, row):
@@ -285,8 +306,12 @@ class myTable():
     def sAdd(self):
         title = "table "+self.params['name']+" Add record"
         
-        max_id = self.params['db'].getMax(self.params['name'], 'id')
-        my_id = self.params['showmessage'](title,"ID: ", type="input_integer", value = max_id + 1)
+        #max_id = self.params['db'].getMax(self.params['name'], 'id')
+        
+        row = self.model.getDefaultRow()
+        print "sAdd", row
+        
+        my_id = self.params['showmessage'](title,"ID: ", type="input_integer", value = row['id'])
                 
         res = self.params['db'].getParId(self.params['name'], my_id).fetchone()
         
@@ -296,14 +321,14 @@ class myTable():
             return
      
         #get dict for adding
-        row = {}
-        for key in self.params['keys']:
-            row[key] = ''
+        #row = {}
+        #for key in self.params['keys']:
+        #    row[key] = ''
         row['id'] = my_id
                 
         self.model.params['guidata'].user_actions = GuiData.ACTIONS_DISABLE        
         #self.model.addRow(row)
-        print "NOW"
+        #print "NOW", row
         dbRow = self.model.table2dbRow(row)
         self.params['db'].insert_from_dict(self.params['name'], dbRow)
         self.model.params['guidata'].user_actions = GuiData.ACTIONS_ENABLE
@@ -333,14 +358,15 @@ class myTable():
     # CSV FILE => DB               
     def sImport(self): 
                            
-        print "dialog start.."                           
-        filename = QtGui.QFileDialog.getOpenFileName(self.params['view'],"Import CSV to table "+self.params['name'],"table_"+self.params['name']+".csv","Csv Files (*.csv)")
-        print "dialog stop.."        
+                                   
+        #gui dialog -> get filename
+        filename = QtGui.QFileDialog.getOpenFileName(self.params['view'],"Import CSV to table "+self.params['name'],"table_"+self.params['name']+".csv","Csv Files (*.csv)")                
         
         #cancel or close window
         if(filename == ""):                 
             return        
                   
+        #import
         try:              
             #state = table.importCsv2(filename)
             state = self.params['db'].importCsv(self.params['name'], filename, self.params['keys'])

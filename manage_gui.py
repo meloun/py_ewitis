@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'dialog.ui'
 #
-# Created: Fri Jul 23 13:17:53 2010
-#      by: PyQt4 UI code generator 4.7.4
+#
 #
 
 import sys
@@ -11,15 +9,10 @@ import time
 import manage_comm
 from PyQt4 import QtCore, QtGui
 import ewitis.gui.Ui_App as Ui_App
-import ewitis.gui.myModel as myModel
-import libs.myqt.myqtTable as myqtTable
-import libs.myqt.myqtModel as myqtModel
 import libs.db_csv.db_csv as Db_csv
 
 import ewitis.gui.myModel as myModel
-
 import ewitis.gui.GuiData as GuiData
-import ewitis.gui.Ui_Slots as Ui_Slots
 import ewitis.gui.myModel as myModel
 import ewitis.gui.RunsModel as RunsModel
 import ewitis.gui.TimesModel as TimesModel
@@ -29,33 +22,23 @@ import ewitis.gui.UsersModel as UsersModel
 import libs.sqlite.sqlite as sqlite
 import ewitis.sql_queries.sql_queries as sql_queries
 
-#COMM Shared Memory
-DEFAULT_GUI_SHARED_MEMORY = { 
-                             "statusbar_text": "ok",
-                              "console_text":""
-}
 
    
 class wrapper_gui_ewitis(QtGui.QMainWindow):
-    def __init__(self, parent=None, ShaMem_comm = manage_comm.DEFAULT_COMM_SHARED_MEMORY, ShaMem_gui = DEFAULT_GUI_SHARED_MEMORY):
+    def __init__(self, parent=None, ShaMem_comm = manage_comm.DEFAULT_COMM_SHARED_MEMORY):    
         import libs.comm.serial_utils as serial_utils 
         
         #GUI
-        QtGui.QWidget.__init__(self, parent)
-        self.port_state = 0
+        QtGui.QWidget.__init__(self, parent)        
         self.ui = Ui_App.Ui_MainWindow()
         self.ui.setupUi(self)                
-                                                                     
-        
-        #GUI SHM
-        self.ShaMem_gui = ShaMem_gui
+                                                                                      
         
         #GUI USER
         
         '''status bar'''
-        self.ui.statusbar.showMessage(self.ShaMem_gui["statusbar_text"])
-        
-        '''aSetPort'''
+        self.ui.statusbar.showMessage("ok")
+                
         #nastaveni prvniho dostupneho portu
         self.ui.aSetPort.setText(serial_utils.enumerate_serial_ports().next())
                                                            
@@ -92,6 +75,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.aConnectPort, QtCore.SIGNAL("activated()"), self.sPortConnect)
         QtCore.QObject.connect(self.ui.actionAbout, QtCore.SIGNAL("activated()"), self.sAbout)  
         QtCore.QObject.connect(self.ui.aRefreshMode, QtCore.SIGNAL("activated()"), self.sRefreshMode)      
+        QtCore.QObject.connect(self.ui.aLockMode, QtCore.SIGNAL("activated()"), self.sLockMode)
         QtCore.QObject.connect(self.ui.aEditMode, QtCore.SIGNAL("activated()"), self.sEditMode)
         QtCore.QObject.connect(self.ui.tabWidget, QtCore.SIGNAL("currentChanged (int)"), self.sTabChanged)
         QtCore.QObject.connect(self.ui.TimesShowAll, QtCore.SIGNAL("stateChanged (int)"), self.sTimesShowAllChanged)
@@ -101,12 +85,17 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ShaMem_comm = ShaMem_comm                
                        
         self.myManageComm = manage_comm.ManageComm(ShaMem_comm = self.ShaMem_comm) #COMM instance
+        
+        
+        
         self.myManageComm.start() #start thread, 'run' flag should be 0, so this thread ends immediatelly
           
     def __del__(self):
         print "GUI: mazu instanci.."                                                              
 
+    #=======================================================================
     # UPDATE TIMES
+    #=======================================================================    
     # function for update table TIMES according to selection in RUNS
     def updateTimes(self):         
                          
@@ -117,8 +106,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         try: 
             
             #ziskani id z vybraneho radku                                         
-            run_id = self.R.proxy_model.data(rows[0]).toString()
-            print "run_id: ", run_id         
+            run_id = self.R.proxy_model.data(rows[0]).toString()                 
                                          
             #get TIMES from database & add them to the table
             self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
@@ -127,6 +115,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         except:
             print "I: Times: nelze aktualizovat!"
     
+    #=======================================================================
+    # SHOW MESSAGE -     
+    #=======================================================================
+    # dialog, status bar
+    # warning(OK), info(OK), warning_dialog(Yes, Cancel), input_integer(integer, OK)      
     def showMessage(self, title, message, type='warning', dialog=True, statusbar=True, value=0):
         
         #DIALOG
@@ -157,13 +150,13 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.myapp.show()    
         sys.exit(self.app.exec_())
                 
-    def updateShM(self):
+    def updateShaMem_comm(self):
         self.ShaMem_comm["port"] = str(self.ui.aSetPort.text()) 
                 
 
          
     #=======================================================================
-    # SLOTS
+    ### SLOTS ###
     #=======================================================================
     def sTabChanged(self, nr):
         if(nr==0):
@@ -190,64 +183,14 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         
     def sRunsProxyView_SelectionChanged(self, selected, deselected):               
         if(selected):            
-            self.updateTimes()  #update TIMES table            
-            
-    def sEditMode(self):
-        print "I: switching to editing mode.."
-        self.ui.aEditMode.setChecked(True) 
-        self.ui.aRefreshMode.setChecked(False)
-        self.GuiData.mode = GuiData.MODE_EDIT  
-        self.T.model.mode = myModel.MODE_EDIT           
-        self.R.model.mode = myModel.MODE_EDIT
-        self.U.model.mode = myModel.MODE_EDIT  
-        
-    
-    def sImportRuns(self):
-        pass         
-    def sImportTimes(self):
-        pass
-     
-    #tlacitko pro import uzivatelu
-    #WEB - id, kategorie, prijmeni, jmeno, adresa,.. 
-    #DB - id, nr, name, kategory, address 
-    def sImportUsers(self):        
-                
-        #import       
-        state = self.U.importCsv("Blizak_2010.csv")
-        self.sImportDialog(state)
-    
-                       
-    def sImportDialog(self, state):               
-        #error message
-        title = "Import"
-        if(state['ko'] != 0) :                                               
-            message = str(state['ko'])+" record(s) NOT succesfully imported.\n\n Probably already exist."
-            QtGui.QMessageBox.warning(self, title, message)
-        else:
-            message = str(state['ok'])+" record(s) succesfully imported."
-            QtGui.QMessageBox.information(self, title, message)            
-        self.ui.statusbar.showMessage(title+" : " + message)        
+            self.updateTimes()  #update TIMES table                                                                               
                       
         
-        
-    def sRefreshMode(self):
-        print "I: switching to refreshing mode.. main"
-        self.ui.aRefreshMode.setChecked(True) 
-        self.ui.aEditMode.setChecked(False)  
-        self.GuiData.mode = GuiData.MODE_REFRESH     
-        self.T.model.mode = myModel.MODE_REFRESH          
-        self.R.model.mode = myModel.MODE_REFRESH
-        #self.U.model.mode = myModel.MODE_REFRESH
-              
-                     
-                                                                                           
-    def sRefresh(self):
-        print "I: refreshing.."
-        self.R.update()                
-                      
+    #===========================================================================
+    ### PORT TOOLBAR ### 
+    #=========================================================================== 
     def sPortSet(self):
-        import libs.comm.serial_utils as serial_utils 
-        print "GUI: aPortSet activated()"
+        import libs.comm.serial_utils as serial_utils         
         
         #dostupne porty
         ports = []
@@ -257,28 +200,106 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
 
         item, ok = QtGui.QInputDialog.getItem(self, "Serial Port",
                 "Serial Port:", ports, 0, False)
-        if ok and item:            
+        
+        title = "Port Set"
+        if (ok and item):            
             self.ui.aSetPort.setText(item)
-                       
-    '''connect -> vytvari komunikacni vlakno'''        
+            self.showMessage(title, str(item), dialog = False)                
+        
+                           
+    #=======================================================================
+    # sPortConnect() -> create/kill communication thread 
+    #=======================================================================        
     def sPortConnect(self):
-        self.updateShM()
-        if(self.ShaMem_comm["run"]): 
-            print "GUI: aPortConnect activated()->disconnect", self.ui.aSetPort.text()  
-            print "GUI: mazu COMM.."            
-            self.ShaMem_comm["run"] = 0 #close current thread
+        
+        #refresh COMM data (gui -> shared memory; port, speed, etc..)
+        self.updateShaMem_comm()
+        
+        title = "Port ("+self.ShaMem_comm["port"]+")"
+        
+        #comm runs?
+        if(self.ShaMem_comm["enable"] == True):                            
+            
+            #=======================================================================
+            # KILL COMMUNICATION - thread, etc..
+            #=======================================================================
+            #close current thread            
+            self.ShaMem_comm["enable"] = False
+            #gui 
             self.ui.aSetPort.setEnabled(True)   
-            self.ui.aConnectPort.setText("Connect")                                
-        else:
-            print "GUI: aPortConnect activated()->connect", self.ui.aSetPort.text()
-            print "GUI: zakladam COMM.."
-            self.ShaMem_comm["run"] = 1
+            self.ui.aConnectPort.setText("Connect")
+            self.showMessage(title, "disconnected", dialog = False)                                
+        else:                                    
+            
+            #=======================================================================
+            # CREATE COMMUNICATION - thread, etc..
+            #=======================================================================
+            # create thread
+            self.ShaMem_comm["enable"] = True
             self.myManageComm = manage_comm.ManageComm(ShaMem_comm = self.ShaMem_comm)           
             self.myManageComm.start()
+            #gui
             self.ui.aSetPort.setEnabled(False)
-            self.ui.aConnectPort.setText("Disconnect")             
-        print "GUI: ",self.ShaMem_comm["run"]
+            self.ui.aConnectPort.setText("Disconnect")
+            self.showMessage(title, "connected", dialog = False)                     
         
+    #===========================================================================
+    ### ACTION TOOLBAR ### 
+    #=========================================================================== 
+    def sRefresh(self):
+        
+        self.R.update()
+        self.T.update()
+        self.U.update()
+        
+        title = "Manual Refresh"
+        self.showMessage(title, time.strftime("%H:%M:%S", time.localtime()), dialog = False)   
+        
+    #===========================================================================
+    #### MODE TOOLBAR => EDIT, LOCK, REFRESH ### 
+    #===========================================================================         
+    def sEditMode(self):
+        
+        self.ui.aEditMode.setChecked(True) 
+        self.ui.aLockMode.setChecked(False) 
+        self.ui.aRefreshMode.setChecked(False)
+        
+        #self.GuiData.mode = GuiData.MODE_EDIT
+          
+        self.T.model.mode = myModel.MODE_EDIT           
+        self.R.model.mode = myModel.MODE_EDIT
+        self.U.model.mode = myModel.MODE_EDIT
+        
+        self.showMessage("Mode", "EDIT", dialog = False)
+          
+    def sRefreshMode(self):
+        
+        self.ui.aRefreshMode.setChecked(True)
+        self.ui.aLockMode.setChecked(False) 
+        self.ui.aEditMode.setChecked(False)  
+        
+        #self.GuiData.mode = GuiData.MODE_REFRESH     
+                  
+        self.R.model.mode = myModel.MODE_REFRESH
+        self.T.model.mode = myModel.MODE_REFRESH
+        self.U.model.mode = myModel.MODE_REFRESH  
+        
+        self.showMessage("Mode", "REFRESH", dialog = False)      
+        
+    def sLockMode(self):
+        
+        self.ui.aLockMode.setChecked(True)
+        self.ui.aRefreshMode.setChecked(False) 
+        self.ui.aEditMode.setChecked(False)
+          
+        #self.GuiData.mode = GuiData.MODE_LOCK     
+                
+        self.R.model.mode = myModel.MODE_LOCK
+        self.T.model.mode = myModel.MODE_LOCK
+        self.U.model.mode = myModel.MODE_LOCK
+        
+        self.showMessage("Mode", "LOCK", dialog = False)
+                                                                                                                                                                                 
     def sAbout(self):                           
         QtGui.QMessageBox.information(self, "About", "Ewitis  - Electronic wireless timing \n\ninfo@ewitis.cz\nwww.ewitis.cz\n\n v0.1\n\n (c) 2011")                                                
 

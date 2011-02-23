@@ -30,10 +30,10 @@ def callback(command, data):
         '''                                          
         aux_time = {}        
         aux_time['error'], aux_time['state'], aux_time['id'],  aux_time['run_id'], \
-        aux_time['user_id'], aux_time['cell'],aux_time['time'], = struct.unpack("<HBIHIBI", data)
+        aux_time['user_id'], aux_time['cell'],aux_time['time_raw'], = struct.unpack("<HBIHIBI", data)
         
         #add data
-        aux_time['time_str'] = utils.time_to_string(aux_time['time'])                                        
+        aux_time['time'] = utils.time_to_string(aux_time['time_raw'])                                        
                        
         return aux_time
     

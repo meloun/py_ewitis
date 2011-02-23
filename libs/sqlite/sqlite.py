@@ -39,7 +39,7 @@ class sqlite_db(object):
         return res 
             
     def query(self, query):
-        #print "query: ",query
+        print "query: ",query
         res = self.db.execute(query)                
         return res
         

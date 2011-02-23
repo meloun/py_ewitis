@@ -23,9 +23,9 @@ from threading import Thread
 
 #COMM Shared Memory
 DEFAULT_COMM_SHARED_MEMORY = { 
+                              "enable" : False,
                               "port": "COM5",
-                              "baudrate": 38400,
-                              "run" : 0
+                              "baudrate": 38400                              
 }
 
 class ManageComm(Thread):
@@ -64,7 +64,7 @@ class ManageComm(Thread):
     def run(self):  
         import sqlite3      
         print "COMM: zakladam vlakno.."
-        if(self.ShaMem_comm["run"] == 0):
+        if(self.ShaMem_comm["enable"] == False):
             print "COMM: okamzite koncim vlakno.."
             return
         
@@ -104,11 +104,11 @@ class ManageComm(Thread):
                 time.sleep(0.01)
                 
                 #terminate thread?                 
-                if(self.ShaMem_comm["run"] == 0):
+                if(self.ShaMem_comm["enable"] == False):
                     self.stop()                    
                     return                
             
-            #print "COMM: ",self.ShaMem_comm["run"] 
+            #print "COMM: ",self.ShaMem_comm["enable"] 
                        
             #===================================================================
             # GET NEW TIME           
@@ -137,12 +137,12 @@ class ManageComm(Thread):
             if(aux_time['error'] == 0):
                                     
                 '''update CSV file'''                                
-                aux_csv_string = str(aux_time['id']) + ";" + str(aux_time['run_id']) + ";" + str(aux_time['time_str']).replace(',', '.')
+                aux_csv_string = str(aux_time['id']) + ";" + str(aux_time['run_id']) + ";" + str(aux_time['time']).replace(',', '.')
                 print "I: Comm: receive time: "+aux_csv_string
                                 
                 '''save to database'''
-                keys = ["state","id", "run_id", "user_id", "cell", "time", "time_str"]
-                values = [aux_time['state'], aux_time['id'],aux_time['run_id'], aux_time['user_id'], aux_time['cell'], aux_time['time'], aux_time['time_str']]
+                keys = ["state","id", "run_id", "user_id", "cell", "time_raw", "time"]
+                values = [aux_time['state'], aux_time['id'],aux_time['run_id'], aux_time['user_id'], aux_time['cell'], aux_time['time_raw'], aux_time['time']]
                 
                 try: 
                     #self.tableTimes.insert_from_lists(keys, values)
