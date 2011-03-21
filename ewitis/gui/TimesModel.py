@@ -4,48 +4,64 @@ import sys
 import time
 from PyQt4 import QtCore, QtGui
 import ewitis.gui.myModel as myModel
+import ewitis.gui.UsersModel as UsersModel
 import ewitis.gui.GuiData as GuiData
+
 
 
 class TimesParameters(myModel.myParameters):
     def __init__(self, source):
+                
+        #table and db table name
+        self.name = "Times" 
+        
+        #TABLE USERS
+        self.tabUser = source.U   
+        
+        #=======================================================================
+        # KEYS
+        #=======================================================================
+        self.KEYS_DEF = [ \
+                        {"name":"state",      "tabName": None,         "dbName": "state"},\
+                        {"name":"id",         "tabName": "id",         "dbName": "id"},\
+                        {"name":"nr",         "tabName": "nr",         "dbName": None},\
+                        {"name":"run_id",     "tabName": None,         "dbName": "run_id"},\
+                        {"name":"user_id",    "tabName": None,         "dbName": "user_id"},\
+                        {"name":"cell",       "tabName": None,         "dbName": "cell"},\
+                        {"name":"time_raw",   "tabName": None,         "dbName": "time_raw"},\
+                        {"name":"time",       "tabName": "time",       "dbName": "time"},\
+                        {"name":"name",       "tabName": "name",       "dbName": None},\
+                        {"name":"category",   "tabName": "category",   "dbName": None},                                                                                                                           
+                    ] 
         
         #create MODEL and his structure
-        myModel.myParameters.__init__(self, source)
-        
-        self.params['ui']  = source.ui
-        
-        #table and db table name
-        self.params['name'] = "times"  
-        
-        #table keys
-        self.params['keys'] = ["id", "nr", "time", "name", "kategory", "address"]
-        
-        #db for acces
-        self.params['db'] = source.db
-        
-        #guidata
-        self.params['guidata'] = source.GuiData
+        myModel.myParameters.__init__(self, source)        
+                                     
+        print "TIME KEYS2:", self.keys               
+        print "TIME KEYS2_DB:", self.keys_db                
+                
+    
                                 
         #=======================================================================
         # GUI
         #=======================================================================
+        self.gui = {} 
         #VIEW
-        self.params['view'] = source.ui.TimesProxyView
+        self.gui['view'] = source.ui.TimesProxyView
         
         #FILTER
-        self.params['filter'] = source.ui.TimesFilterLineEdit
-        self.params['filterclear'] = source.ui.TimesFilterClear
+        self.gui['filter'] = source.ui.TimesFilterLineEdit
+        self.gui['filterclear'] = source.ui.TimesFilterClear
         
         #GROUPBOX
-        self.params['add'] = source.ui.TimesAdd
-        self.params['remove'] =  source.ui.TimesRemove
-        self.params['export'] = source.ui.TimesExport
-        self.params['import'] = None 
-        self.params['delete'] = source.ui.TimesDelete
+        self.gui['add'] = source.ui.TimesAdd
+        self.gui['remove'] =  source.ui.TimesRemove
+        self.gui['export'] = source.ui.TimesExport
+        self.gui['import'] = None 
+        self.gui['delete'] = source.ui.TimesDelete
         
         #COUNTER
-        self.params['counter'] = source.ui.timesCounter
+        self.gui['counter'] = source.ui.timesCounter
                  
         
         
@@ -64,7 +80,7 @@ class TimesModel(myModel.myModel):
         
         
         #update with first run        
-        first_run = self.params['db'].getFirst("runs")
+        first_run = self.params.db.getFirst("runs")
         if(first_run != None):
             self.run_id = first_run['id']
         else:
@@ -77,64 +93,70 @@ class TimesModel(myModel.myModel):
     #first collumn is NOT editable
     def flags(self, index): 
         
-        #id, name, kategory, addres NOT editable
+        #id, name, category, addres NOT editable
         if ((index.column() == 3) or (index.column() == 4) or (index.column() == 5)):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
         return myModel.myModel.flags(self, index)
     
-    def getDefaultRow(self): 
-        row = myModel.myModel.getDefaultRow(self)
-        row['nr'] = 1
+    def getDefaultTableRow(self): 
+        row = myModel.myModel.getDefaultTableRow(self)
+        row['nr'] = "0"
         row['time'] = "00:00:00,00"
         print "timeROOW", row
         return row 
     
-    #["id", "nr", "time", "name", "kategory", "address"]
-    def db2tableRow(self, time_db):
+    #["id", "nr", "time", "name", "category", "address"]
+    def db2tableRow(self, dbTime):
         
         
         #hide all zero time?
         if(self.showzero == False):
-            if (time_db["time"]=="00:00:00,00"):  
-                return {}
-        
-        
-        #print time_db
+            if (dbTime["time"]=="00:00:00,00"):  
+                return {}                        
         
         #get USER
-        user_db = self.params['db'].getParX("users", "id", time_db["user_id"]).fetchone()
+        user_db = self.params.db.getParX("users", "id", dbTime["user_id"]).fetchone()
         
         #exist user?
         if user_db == None:
-            user = {'id':0, 'nr':0, 'name':'unknown', 'kategory':'', 'address':''}
+            user = {'id':0, 'nr':0, 'name':'unknown', 'category':'', 'address':''}
         #exist => restrict username                
         else:
             if(user_db['name']==''):
                 user_db['name'] = 'nobody'
-            user = user_db            
+            user = UsersModel.UsersModel.db2tableRow(self.params.tabUser.model, user_db) 
+            #user = user_db
         
-        time_table = {}
-        time_table['id'] = time_db["id"]
-        time_table['nr'] = user['nr']
-        time_table['time'] = time_db["time"]
-        time_table['name'] = user['name']
-        time_table['kategory'] = user['kategory']
-        time_table['address'] = user['address']
-        time_table['description'] = user['address']
+                        
+        #1to1 keys just copy
+        tabTime = myModel.myModel.db2tableRow(self, dbTime)
+        #other keys            
+        tabTime['nr'] = user['nr']        
+        tabTime['name'] = user['name']
+        tabTime['category'] = user['category']
+        tabTime['address'] = user['address']        
                 
-        return time_table
+        return tabTime
+                                                                                   
     
     def table2dbRow(self, tabTime): 
                     
-        print "tabTime", tabTime
-        user = self.params['db'].getParX("users", "nr", tabTime['nr']).fetchone()
+        #1to1 keys just copy
+        dbTime = myModel.myModel.table2dbRow(self, tabTime)
         
+        #get user
+        user = self.params.db.getParX("users", "nr", tabTime['nr']).fetchone()
         
+        #other keys
+        dbTime['run_id'] = self.run_id
+        
+        #user not found
         if(user == None):
-            dbTime = {'id': tabTime['id'], 'run_id':self.run_id, 'time' : tabTime['time']}
-        else:
-            dbTime = {'id': tabTime['id'], 'run_id':self.run_id, 'user_id':user['id'], 'time' : tabTime['time']} 
+            self.params.showmessage(self.params.name+" Update error", "No user with number "+tabTime['nr']+"!")
+            return None                        
+        
+        dbTime['user_id'] = user['id']         
                                                                                                                                          
         return dbTime
     
@@ -180,16 +202,16 @@ class Times(myModel.myTable):
         #self.proxy_model.setSourceModel(self.model)
         
         #assign PROXY MODEL to VIEW        
-        self.params['view'].setModel(self.proxy_model)
-        self.params['view'].setRootIsDecorated(False)
-        self.params['view'].setAlternatingRowColors(True)        
-        self.params['view'].setSortingEnabled(True)
-        self.params['view'].setColumnWidth(0,40)
-        self.params['view'].setColumnWidth(1,40)
-        self.params['view'].setColumnWidth(2,80)
-        self.params['view'].setColumnWidth(3,100)
-        self.params['view'].setColumnWidth(4,80)
-        self.params['view'].setColumnWidth(5,100)
+        self.params.gui['view'].setModel(self.proxy_model)
+        self.params.gui['view'].setRootIsDecorated(False)
+        self.params.gui['view'].setAlternatingRowColors(True)        
+        self.params.gui['view'].setSortingEnabled(True)
+        self.params.gui['view'].setColumnWidth(0,40)
+        self.params.gui['view'].setColumnWidth(1,40)
+        self.params.gui['view'].setColumnWidth(2,80)
+        self.params.gui['view'].setColumnWidth(3,100)
+        self.params.gui['view'].setColumnWidth(4,80)
+        self.params.gui['view'].setColumnWidth(5,100)
         
         #TIMERs
         self.timer1s = QtCore.QTimer(); 
@@ -202,38 +224,7 @@ class Times(myModel.myTable):
         self.model.update(run_id = run_id)                
         self.update_counter()                                                    
         
-
-               
-    #=======================================================================
-    # SLOTS
-    #=======================================================================
-        
-              
-        
-    #MODEL CHANGED        
-    def slot_ModelChanged_old(self,a,b):
-        
-        #user change, no auto update
-        if((self.params['guidata'].mode == GuiData.MODE_EDIT) and (self.params['guidata'].user_actions == GuiData.ACTIONS_ENABLE)):                  
-            #prepare data
-            aux_id = self.model.item(a.row(), 0).text()            
-            aux_time = self.model.item(a.row(), 2).text()
-            aux_nr = self.model.item(a.row(), 1).text()
-            
-            #find user par nr (from user table)
-            try:            
-                aux_user = self.params['db'].getParX("users", "nr", aux_nr).fetchone()
-                aux_dict = {"id" : aux_id, "user_id": aux_user["id"], "time" : aux_time}
-            except:
-                aux_dict = {"id" : aux_id, "time" : aux_time}
-                print "E: Times: unknown user" 
-                                                            
-            #replace                         
-            self.params['db'].update_from_dict("times", aux_dict)
-            
-            print "replacing.. ", self.run_id, aux_dict 
-            time.sleep(0.1)  
-            self.update(self.run_id)                    
+                                    
                                                                                             
     
 

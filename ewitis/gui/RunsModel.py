@@ -13,44 +13,50 @@ import ewitis.gui.GuiData as GuiData
 
 
 class RunsParameters(myModel.myParameters):
-    def __init__(self, source):
+    def __init__(self, source):                
+                        
+        #table and db table name
+        self.name = "Runs" 
         
+        #TABLE USERS
+        self.tabTimes = source.U 
+        
+        #=======================================================================
+        # KEYS DEFINITION
+        #=======================================================================        
+        self.KEYS_DEF = [ \
+                        {"name":"state",        "tabName": None,          "dbName": "state"},\
+                        {"name":"id",           "tabName": "id",          "dbName": "id"},\
+                        {"name":"starttime_id", "tabName": None,          "dbName": "starttime_id"},\
+                        {"name":"date",         "tabName": "date",        "dbName": "date"},\
+                        {"name":"name_id",      "tabName": None,          "dbName": "name_id"},\
+                        {"name":"name",         "tabName": "name",        "dbName": None},\
+                        {"name":"description",  "tabName": "description", "dbName": "description"},                                                                                                                          
+                    ]  
         
         #create MODEL and his structure
         myModel.myParameters.__init__(self, source)
-                
-        
-        #table and db table name
-        self.params['name'] = "runs"  
-        
-        #table keys
-        self.params['keys'] = ["id", "date", "name", "description"]
-        
-        #db for acces
-        self.params['db'] = source.db
-        
-        #guidata
-        self.params['guidata'] = source.GuiData
-                
+                                  
         #=======================================================================
         # GUI
         #=======================================================================
+        self.gui = {} 
         #VIEW
-        self.params['view'] = source.ui.RunsProxyView
+        self.gui['view'] = source.ui.RunsProxyView
         
         #FILTER
-        self.params['filter'] = source.ui.RunsFilterLineEdit
-        self.params['filterclear'] = source.ui.RunsFilterClear
+        self.gui['filter'] = source.ui.RunsFilterLineEdit
+        self.gui['filterclear'] = source.ui.RunsFilterClear
         
         #GROUPBOX
-        self.params['add'] = source.ui.RunsAdd
-        self.params['remove'] =  source.ui.RunsRemove
-        self.params['export'] = source.ui.RunsExport
-        self.params['import'] = None 
-        self.params['delete'] = source.ui.RunsDelete
+        self.gui['add'] = source.ui.RunsAdd
+        self.gui['remove'] =  source.ui.RunsRemove
+        self.gui['export'] = source.ui.RunsExport
+        self.gui['import'] = None 
+        self.gui['delete'] = source.ui.RunsDelete
         
         #COUNTER
-        self.params['counter'] = source.ui.runsCounter
+        self.gui['counter'] = source.ui.runsCounter
                  
         
 
@@ -67,7 +73,7 @@ class RunsModel(myModel.myModel):
     def flags(self, index):
         aux_flags = 0
         
-        #id, name, kategory, addres NOT editable
+        #id, name, category, addres NOT editable
         if (index.column() == 2):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
@@ -76,7 +82,7 @@ class RunsModel(myModel.myModel):
     def db2tableRow(self, run):                        
         
         #get USER
-        user = self.params['db'].getParX("users", "id", run["name_id"]).fetchone()
+        user = self.params.db.getParX("users", "id", run["name_id"]).fetchone()
         
         #exist user?
         if user == None:
@@ -123,18 +129,31 @@ class Runs(myModel.myTable):
         
         #assign PROXY MODEL to VIEW        
         #self.view = view 
-        self.params['view'].setModel(self.proxy_model)
-        self.params['view'].setRootIsDecorated(False)
-        self.params['view'].setAlternatingRowColors(True)        
-        self.params['view'].setSortingEnabled(True)
-        self.params['view'].setColumnWidth(0,40)
-        self.params['view'].setColumnWidth(1,120)
-        self.params['view'].setColumnWidth(2,110)
-        self.params['view'].setColumnWidth(3,80)
+        self.params.gui['view'].setModel(self.proxy_model)
+        self.params.gui['view'].setRootIsDecorated(False)
+        self.params.gui['view'].setAlternatingRowColors(True)        
+        self.params.gui['view'].setSortingEnabled(True)
+        self.params.gui['view'].setColumnWidth(0,40)
+        self.params.gui['view'].setColumnWidth(1,120)
+        self.params.gui['view'].setColumnWidth(2,110)
+        self.params.gui['view'].setColumnWidth(3,80)
     
         
         #MODE EDIT/REFRESH        
-        self.system = 0 
+        self.system = 0
+        
+        self.run_id = 0
+        
+    # REMOVE ROW               
+    def sDelete(self):
+        
+        #delete run with additional message
+        myModel.myTable.sDelete(self, "and ALL TIMES belonging to him")
+        
+        #delete times
+        self.params.tabTimes.params.db.deleteParX("times", "run_id", self.run_id)
+        
+         
         
                                    
          

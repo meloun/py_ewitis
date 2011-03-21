@@ -39,7 +39,7 @@ class sqlite_db(object):
         return res 
             
     def query(self, query):
-        print "query: ",query
+        #print "query: ",query
         res = self.db.execute(query)                
         return res
         
@@ -109,7 +109,7 @@ class sqlite_db(object):
         return res
     
     '''vlozeni jednoho zaznamu z dict'''
-    def insert_from_dict(self, tablename, dict,  commit = True):        
+    def insert_from_dict(self, tablename, dict,  commit = True):                
         return self.insert_from_lists(tablename, dict.keys(), dict.values(), commit = commit )        
     
     ###########
@@ -135,9 +135,10 @@ class sqlite_db(object):
     
     ###########
     # UPDATE
-    # - update users SET  kategory="Kat D", nr="4" WHERE id = "4"
-    # - record has to exist
     ###########
+    # - update users SET  category="Kat D", nr="4" WHERE id = "4"
+    # - record has to exist
+
     def update_from_lists(self, tablename, keys, values):
         
         #print keys
@@ -166,7 +167,9 @@ class sqlite_db(object):
                        
         '''vytvoreni stringu pro dotaz, 
         column1=value, column2=value2,... '''                      
-        mystring = ','.join([" "+str(k)+"=\""+str(v)+"\"" for k,v in zip(keys, values)])                            
+        mystring = ','.join([" "+str(k)+"=\""+str(v)+"\"" for k,v in zip(keys, values)]) 
+        
+        print mystring                                   
         
         '''sestaveni a provedeni dotazu'''
         query = "update %s SET %s WHERE id = \"%s\"" % (tablename, mystring, dict['id'])                
@@ -187,10 +190,15 @@ class sqlite_db(object):
         self.db.commit()
         
     def deleteAll(self, tablename):
-        query = "delete from " + tablename
-        
+        query = "delete from " + tablename        
         res = self.query(query)
         self.db.commit()
+        
+    def deleteParX(self, tablename, parameter, value):
+        query = "delete from " + tablename + " where " + parameter +" = " + str(value)          
+        res = self.query(query)
+        self.db.commit()        
+        
         
     #=============
     # IMPORT
@@ -199,6 +207,8 @@ class sqlite_db(object):
     #
     def importCsv(self, tablename, filename, keys):
                 
+        print "IMPOOOORT CSV"
+        print keys
         #create DB        
         aux_csv = Db_csv.Db_csv(filename)
         rows =  aux_csv.load()
@@ -207,14 +217,22 @@ class sqlite_db(object):
         state = {'ko':0, 'ok':0}                        
         
         #wrong file format?
-        if (rows==[]) or (rows.pop(0) != keys):
-            raise CSV_FILE_Error         
+        if (rows==[]):
+            raise CSV_FILE_Error
+        
+        #header, check first X keys
+        header = rows.pop(0)
+        for i in range(4): 
+            if (header[i] != keys[i]):
+                raise CSV_FILE_Error
             
         for row in rows:                                                              
                                                       
             #ADD USER
-            try:            
-                self.insert_from_dict(tablename, dict(zip(keys, row)), commit = False)
+            try:                            
+                #dict(zip())eliminate not existing collumns in CSV, instead insert_from_dict() 
+                self.insert_from_dict(tablename, dict(zip(keys, row)), commit = False)                      
+                #self.insert_from_lists(tablename, keys, row, commit = False) 
                 state['ok'] += 1            
             except:
                 state['ko'] += 1 #increment errors for error message

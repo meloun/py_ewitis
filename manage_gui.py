@@ -31,7 +31,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #GUI
         QtGui.QWidget.__init__(self, parent)        
         self.ui = Ui_App.Ui_MainWindow()
-        self.ui.setupUi(self)                
+        self.ui.setupUi(self)                      
                                                                                       
         
         #GUI USER
@@ -58,13 +58,16 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         # TABLES
         #=======================================================================
         self.GuiData = GuiData.GuiData()
-        self.R = RunsModel.Runs( RunsModel.RunsParameters(self).params )
+        
+        self.U = UsersModel.Users( UsersModel.UsersParameters(self))
+        self.U.model.update()
+        
+        self.R = RunsModel.Runs( RunsModel.RunsParameters(self))
         self.R.update()                
-        self.T = TimesModel.Times( TimesModel.TimesParameters(self).params )
+        self.T = TimesModel.Times( TimesModel.TimesParameters(self))
         #self.updateTimes()
         
-        self.U = UsersModel.Users( UsersModel.UsersParameters(self).params)
-        self.U.model.update()
+
         
         #=======================================================================
         # SIGNALS
@@ -106,11 +109,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         try: 
             
             #ziskani id z vybraneho radku                                         
-            run_id = self.R.proxy_model.data(rows[0]).toString()                 
+            self.R.run_id = self.R.proxy_model.data(rows[0]).toString()                 
                                          
             #get TIMES from database & add them to the table
             self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
-            self.T.update(run_id = run_id)             
+            self.T.update(run_id = self.R.run_id)             
             self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
         except:
             print "I: Times: nelze aktualizovat!"
@@ -120,7 +123,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
     #=======================================================================
     # dialog, status bar
     # warning(OK), info(OK), warning_dialog(Yes, Cancel), input_integer(integer, OK)      
-    def showMessage(self, title, message, type='warning', dialog=True, statusbar=True, value=0):
+    def showMessage(self, title, message, type='warning', dialog=True, statusbar=True, value=0):        
         
         #DIALOG
         if(dialog):                                
@@ -135,7 +138,9 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
                 message = "succesfully"
             elif(type=='input_integer'):
                 i, ok = QtGui.QInputDialog.getInteger(self, title, message, value=value)
-                return i
+                if ok:
+                    return i
+                return None
             
         #STATUSBAR        
         if(statusbar):
@@ -301,7 +306,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.showMessage("Mode", "LOCK", dialog = False)
                                                                                                                                                                                  
     def sAbout(self):                           
-        QtGui.QMessageBox.information(self, "About", "Ewitis  - Electronic wireless timing \n\ninfo@ewitis.cz\nwww.ewitis.cz\n\n v0.1\n\n (c) 2011")                                                
+        QtGui.QMessageBox.information(self, "About", "Ewitis  - Electronic wireless timing \n\ninfo@ewitis.cz\nwww.ewitis.cz\n\n v0.2\n\n (c) 2011")                                                
 
 class manage_gui():
     def __init__(self):
