@@ -127,25 +127,24 @@ class myModel(QtGui.QStandardItemModel):
         
         #user change, no auto update
         if((self.params.guidata.mode == GuiData.MODE_EDIT) and (self.params.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                                                                  
-            
-            #virtual function
-            #get dictionary with row-data, ready for DB
-            tabRow = self.getRow(item.row())
-                                
                         
+            #get dictionary with row-data, ready for DB
+            tabRow = self.getRow(item.row())                                                      
             
+            #dbRow <- tableRow
             dbRow = self.table2dbRow(tabRow)
                                         
-            #is there 
+            #exist row? 
             if (dbRow != None):                                                                            
-                #replace
-                #try:                                       
-                self.params.db.update_from_dict(self.params.name, dbRow)
-                #except:                
-                #    self.params.showmessage(self.params.name+" Update", "Error!")
-                return
-                                               
-            self.update()
+                #update DB
+                try:                                       
+                    self.params.db.update_from_dict(self.params.name, dbRow)
+                except:                
+                    self.params.showmessage(self.params.name+" Update", "Error!")
+                    return
+                
+            #update model                                                               
+            self.update()            
 
     
     def getDefaultTableRow(self):        
