@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
-
 # 
 #
 #
@@ -18,8 +17,8 @@ class RunsParameters(myModel.myParameters):
         #table and db table name
         self.name = "Runs" 
         
-        #TABLE USERS
-        self.tabTimes = source.U 
+        #TABLE TIMES
+        self.tabTimes = source.T 
         
         #=======================================================================
         # KEYS DEFINITION
@@ -140,9 +139,34 @@ class Runs(myModel.myTable):
     
         
         #MODE EDIT/REFRESH        
-        self.system = 0
+        self.system = 0                       
+                               
+        #set selection to first row
+        self.params.gui['view'].selectionModel().setCurrentIndex(self.model.index(0,0), QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.SelectCurrent)
+            
+        #update table times (use selection to define run_id)        
+        self.updateTimes()
         
-        self.run_id = 0
+    #=======================================================================
+    # UPDATE TIMES
+    #=======================================================================    
+    # function for update table TIMES according to selection in RUNS
+    def updateTimes(self):         
+                         
+        #get index of selected ID (from tableRuns) 
+        rows = self.params.gui['view'].selectionModel().selectedRows() #default collumn = 0
+                                      
+        #update table times with run_id
+        try:             
+            #ziskani id z vybraneho radku                                         
+            self.run_id = self.proxy_model.data(rows[0]).toString()                 
+                                         
+            #get TIMES from database & add them to the table
+            self.params.guidata.user_actions = GuiData.ACTIONS_DISABLE
+            self.params.tabTimes.update(run_id = self.run_id)             
+            self.params.guidata.user_actions = GuiData.ACTIONS_ENABLE
+        except:
+            print "I: Times: nelze aktualizovat!"
         
     # REMOVE ROW               
     def sDelete(self):
@@ -151,7 +175,9 @@ class Runs(myModel.myTable):
         myModel.myTable.sDelete(self, "and ALL TIMES belonging to him")
         
         #delete times
-        self.params.tabTimes.params.db.deleteParX("times", "run_id", self.run_id)
+        self.params.tabTimes.params.db.deleteParX("times", "run_id", self.run_id)               
+        self.params.tabTimes.update()
+        print "mazu"
         
          
         

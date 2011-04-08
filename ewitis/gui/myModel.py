@@ -117,7 +117,13 @@ class myModel(QtGui.QStandardItemModel):
             #is for this key alias in DB also in TABLE?            
             if((key['tabName']!=None) and (key['dbName']!=None)):
                 dbRow[ key['dbName']] = tabRow[key['tabName']]
-        
+                #convert to normal string
+                
+        #convert QString to str
+        for key in dbRow.keys():
+            if type(dbRow[key]) is Qt.QString:
+                dbRow[key] = str(dbRow[key].toUtf8())
+                
         return dbRow
             
     
@@ -137,11 +143,12 @@ class myModel(QtGui.QStandardItemModel):
             #exist row? 
             if (dbRow != None):                                                                            
                 #update DB
-                try:                                       
-                    self.params.db.update_from_dict(self.params.name, dbRow)
-                except:                
-                    self.params.showmessage(self.params.name+" Update", "Error!")
-                    return
+                #try:
+                    #print self.params.name, dbRow                                        
+                self.params.db.update_from_dict(self.params.name, dbRow)
+                #except:                
+                #    self.params.showmessage(self.params.name+" Update", "Error!")
+                #    return
                 
             #update model                                                               
             self.update()            
@@ -323,9 +330,9 @@ class myTable():
     #=======================================================================
         
     #UPDATE TIMER    
-    def slot_Timer1s(self):         
+    def slot_Timer1s(self):                 
         if (self.params.guidata.mode == GuiData.MODE_REFRESH): 
-            self.update()    #update table
+            self.update()    #update table            
     
         # CLEAR FILTER BUTTON -> CLEAR FILTER        
     def sFilterClear(self):    
@@ -478,6 +485,8 @@ class myTable():
             aux_csv.save(rows)
             
     def update(self, parameter=None, value=None, selectionback=True):
+        
+        print "basic update"
                     
         #get row-selection
         if(selectionback==True):

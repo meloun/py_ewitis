@@ -59,13 +59,14 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #=======================================================================
         self.GuiData = GuiData.GuiData()
         
-        self.U = UsersModel.Users( UsersModel.UsersParameters(self))
-        self.U.model.update()
-        
+        self.U = UsersModel.Users( UsersModel.UsersParameters(self))                       
+        self.T = TimesModel.Times( TimesModel.TimesParameters(self))        
         self.R = RunsModel.Runs( RunsModel.RunsParameters(self))
-        self.R.update()                
-        self.T = TimesModel.Times( TimesModel.TimesParameters(self))
-        #self.updateTimes()
+        
+        self.U.update()
+        self.T.update()
+        self.R.update()
+   
         
 
         
@@ -100,7 +101,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
     # UPDATE TIMES
     #=======================================================================    
     # function for update table TIMES according to selection in RUNS
-    def updateTimes(self):         
+    def updateTimes_old(self):         
                          
         #get index of selected ID (from tableRuns) 
         rows = self.ui.RunsProxyView.selectionModel().selectedRows() #default collumn = 0
@@ -166,7 +167,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
     def sTabChanged(self, nr):
         if(nr==0):
             self.R.update()
-            self.updateTimes()  #update TIMES table
+            self.R.updateTimes()  #update TIMES table
             #self.T.update()
         elif(nr==1):
             self.U.update()
@@ -188,7 +189,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         
     def sRunsProxyView_SelectionChanged(self, selected, deselected):               
         if(selected):            
-            self.updateTimes()  #update TIMES table                                                                               
+            self.R.updateTimes()  #update TIMES table                                                                               
                       
         
     #===========================================================================
@@ -269,7 +270,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aLockMode.setChecked(False) 
         self.ui.aRefreshMode.setChecked(False)
         
-        #self.GuiData.mode = GuiData.MODE_EDIT
+        self.GuiData.mode = GuiData.MODE_EDIT
           
         self.T.model.mode = myModel.MODE_EDIT           
         self.R.model.mode = myModel.MODE_EDIT
@@ -283,7 +284,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aLockMode.setChecked(False) 
         self.ui.aEditMode.setChecked(False)  
         
-        #self.GuiData.mode = GuiData.MODE_REFRESH     
+        self.GuiData.mode = GuiData.MODE_REFRESH     
                   
         self.R.model.mode = myModel.MODE_REFRESH
         self.T.model.mode = myModel.MODE_REFRESH
@@ -297,7 +298,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aRefreshMode.setChecked(False) 
         self.ui.aEditMode.setChecked(False)
           
-        #self.GuiData.mode = GuiData.MODE_LOCK     
+        self.GuiData.mode = GuiData.MODE_LOCK     
                 
         self.R.model.mode = myModel.MODE_LOCK
         self.T.model.mode = myModel.MODE_LOCK

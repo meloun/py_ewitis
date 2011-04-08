@@ -157,19 +157,18 @@ class sqlite_db(object):
             
         return res
     
-    def update_from_dict(self, tablename, dict):
-        
+    def update_from_dict(self, tablename, dict):                        
+    
         keys = dict.keys()
         values = dict.values()
                 
-        
-        res = '' 
+        res = ''                 
                        
         '''vytvoreni stringu pro dotaz, 
-        column1=value, column2=value2,... '''                      
+        column1=value, column2=value2,... '''                    
         mystring = ','.join([" "+str(k)+"=\""+str(v)+"\"" for k,v in zip(keys, values)]) 
         
-        print mystring                                   
+        #print "mystring", mystring                                   
         
         '''sestaveni a provedeni dotazu'''
         query = "update %s SET %s WHERE id = \"%s\"" % (tablename, mystring, dict['id'])                

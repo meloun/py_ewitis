@@ -220,9 +220,9 @@ class Times(myModel.myTable):
         #MODE EDIT/REFRESH        
         self.system = 0
             
-    def update(self, run_id = None):                
+    def update(self, run_id = None):                      
         self.model.update(run_id = run_id)                
-        self.update_counter()                                                    
+        self.update_counter()                                                     
         
                                     
                                                                                             
