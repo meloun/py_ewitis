@@ -48,6 +48,7 @@ class UsersParameters(myModel.myParameters):
         self.gui['add'] = source.ui.UsersAdd
         self.gui['remove'] =  source.ui.UsersRemove
         self.gui['export'] = source.ui.UsersExport
+        self.gui['export_www'] = None
         self.gui['import'] = source.ui.UsersImport 
         self.gui['delete'] = source.ui.UsersDelete
         
@@ -68,11 +69,13 @@ class UsersModel(myModel.myModel):
     def flags(self, index):
         return myModel.myModel.flags(self, index)
     
+        
     def getDefaultTableRow(self): 
-        row = myModel.myModel.getDefaultTableRow(self)        
-        row['nr'] = "0"
-        row['name'] = "unknown"        
-        return row 
+        user = myModel.myModel.getDefaultTableRow(self)        
+        user['id'] = "0"
+        user['nr'] = "0"
+        user['name'] = "unknown"        
+        return user 
     #===============================================================
     # DB => GUI                            
     #===============================================================   
@@ -81,7 +84,10 @@ class UsersModel(myModel.myModel):
     def db2tableRow(self, dbUser):                                        
         
         #1to1 keys just copy
-        tabUser = myModel.myModel.db2tableRow(self, dbUser)                               
+        tabUser = myModel.myModel.db2tableRow(self, dbUser) 
+        
+        if(tabUser['name']==''):
+                tabUser['name'] = 'nobody'                              
                                 
         return tabUser
     
@@ -100,7 +106,7 @@ class UsersModel(myModel.myModel):
     def slot_ModelChanged(self, item):
         
         #EXIST USER WITH THIS NR??
-        if((self.params.guidata.mode == GuiData.MODE_EDIT) and (self.params.guidata.user_actions == GuiData.ACTIONS_ENABLE)):
+        if((self.params.guidata.table_mode == GuiData.MODE_EDIT) and (self.params.guidata.user_actions == GuiData.ACTIONS_ENABLE)):
             if(item.column() == 1):                                
                 nr = item.data(0).toString() #get row
                 user = self.params.db.getParX("users", "nr", nr).fetchone()
@@ -151,7 +157,7 @@ class Users(myModel.myTable):
         self.timer1s.start(1000);
         
         #MODE EDIT/REFRESH        
-        #self.mode = myModel.MODE_REFRESH
+        #self.table_mode = myModel.MODE_REFRESH
                
         #self.db = db
         
@@ -159,6 +165,27 @@ class Users(myModel.myTable):
         
         #self.model.update()        
         #self.createSlots()
+        
+    def get_db_user(self, id):
+                 
+        db_user = self.params.db.getParX("users", "id", id).fetchone()        
+                        
+        return db_user
+    
+    def get_tab_user(self, id):
+                             
+        #get db user
+        db_user = self.get_db_user(id)
+        
+        #exist user?
+        if db_user == None:
+            tab_user = self.model.getDefaultTableRow()
+            
+        #exist => restrict username                
+        else:
+            tab_user = self.model.db2tableRow(db_user)  
+            
+        return tab_user
         
        
 

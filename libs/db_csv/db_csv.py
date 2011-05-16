@@ -32,6 +32,7 @@ class Db_csv():
     #save csv into file from lists
     def save(self, lists, keys = [], encode = None):
         
+        #print "csv lists:", lists
         my_string = ""
         
         my_string += ";".join(str(x) for x in keys) + "\n"            

@@ -17,13 +17,20 @@ class sqlite_db(object):
     def __init__(self, db_name):        
         self.db_name = db_name 
         
-    def lists_factory(self, cursor):                
-        d = []
+    def cursor2list(self, cursor):
+        list = []
+        for row in cursor:
+            list.append(self.dict_factory(cursor, row))
+        return list
+                 
         
-        for idx, col in enumerate(cursor.description):
-            d[col[0]] = row[idx]
+    
+    #convert "db-row" to lists 
+    def lists_factory(self, cursor):                
+        d = []        
         return d  
     
+    #convert "db-row" to dict (to dict can be added record)
     def dict_factory(self, cursor, row):
         d = {}
         for idx, col in enumerate(cursor.description):
@@ -42,6 +49,11 @@ class sqlite_db(object):
         #print "query: ",query
         res = self.db.execute(query)                
         return res
+    
+    def getCount(self, tablename):
+        query = "SELECT COUNT(*) from " + tablename
+        res = self.query(query)
+        return res.fetchone()
         
     def getAll(self, tablename):
         query = "SELECT * from " + tablename        
@@ -62,6 +74,7 @@ class sqlite_db(object):
         res = self.query(query)
         return res
     
+    # getParXX(conditions, operation) => condition[0][0]=condition[0][1] OPERATION condition[1][0]=condition[1][1]
     def getParXX(self, tablename, conditions, operation):
         
         #where_string = (" "+operation+" ").join(condition[0]+" = " + str(condition[1]) for condition in conditions)

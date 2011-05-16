@@ -33,7 +33,8 @@ def callback(command, data):
         aux_time['user_id'], aux_time['cell'],aux_time['time_raw'], = struct.unpack("<HBIHIBI", data)
         
         #add data
-        aux_time['time'] = utils.time_to_string(aux_time['time_raw'])                                        
+        aux_time['time'] = utils.time_to_string(aux_time['time_raw'])        
+                                                        
                        
         return aux_time
     

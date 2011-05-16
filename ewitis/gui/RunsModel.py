@@ -51,6 +51,7 @@ class RunsParameters(myModel.myParameters):
         self.gui['add'] = source.ui.RunsAdd
         self.gui['remove'] =  source.ui.RunsRemove
         self.gui['export'] = source.ui.RunsExport
+        self.gui['export_www'] = None
         self.gui['import'] = None 
         self.gui['delete'] = source.ui.RunsDelete
         
@@ -120,7 +121,7 @@ class Runs(myModel.myTable):
         #create PROXY MODEL        
         self.proxy_model = RunsProxyModel()
         
-        myModel.myTable.__init__(self, params)
+        myModel.myTable.__init__(self, params)        
         
         
         #assign MODEL to PROXY MODEL
@@ -147,6 +148,22 @@ class Runs(myModel.myTable):
         #update table times (use selection to define run_id)        
         self.updateTimes()
         
+    
+    #=======================================================================
+    # SLOTS
+    #======================================================================= 
+    # CLEAR FILTER BUTTON -> CLEAR FILTER        
+    def sFilterClear(self): 
+        myModel.myTable.sFilterClear(self)
+        self.params.tabTimes.update()   
+        
+                        
+    # FILTER CHANGE -> CHANGE TABLE
+    def sFilterRegExp(self):    
+        myModel.myTable.sFilterRegExp(self)
+        self.params.tabTimes.update()
+        
+        
     #=======================================================================
     # UPDATE TIMES
     #=======================================================================    
@@ -157,16 +174,16 @@ class Runs(myModel.myTable):
         rows = self.params.gui['view'].selectionModel().selectedRows() #default collumn = 0
                                       
         #update table times with run_id
-        try:             
-            #ziskani id z vybraneho radku                                         
-            self.run_id = self.proxy_model.data(rows[0]).toString()                 
-                                         
-            #get TIMES from database & add them to the table
-            self.params.guidata.user_actions = GuiData.ACTIONS_DISABLE
-            self.params.tabTimes.update(run_id = self.run_id)             
-            self.params.guidata.user_actions = GuiData.ACTIONS_ENABLE
-        except:
-            print "I: Times: nelze aktualizovat!"
+        #try:             
+        #ziskani id z vybraneho radku                                         
+        self.run_id = self.proxy_model.data(rows[0]).toString()                 
+                                     
+        #get TIMES from database & add them to the table
+        self.params.guidata.user_actions = GuiData.ACTIONS_DISABLE
+        self.params.tabTimes.update(run_id = self.run_id)             
+        self.params.guidata.user_actions = GuiData.ACTIONS_ENABLE
+        #except:
+        #    print "I: Times: nelze aktualizovat!"
         
     # REMOVE ROW               
     def sDelete(self):

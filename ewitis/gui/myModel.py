@@ -5,6 +5,7 @@ import time
 from PyQt4 import Qt, QtCore, QtGui
 import ewitis.gui.GuiData as GuiData
 import libs.db_csv.db_csv as Db_csv
+import ewitis.exports.ewitis_html as ew_html
 import libs.sqlite.sqlite as sqlite
 
 TABLE_RUNS, TABLE_TIMES, TABLE_USERS = range(3)
@@ -62,14 +63,13 @@ class myModel(QtGui.QStandardItemModel):
         QtGui.QStandardItemModel.__init__(self, 0, len(self.params.keys))                
         
 
-        self.mode = MODE_EDIT
+        self.table_mode = MODE_EDIT
         
         #model structure
         for i in range(len(self.params.keys)):        
             self.setHeaderData(i, QtCore.Qt.Horizontal, self.params.keys[i]) 
             self.setHeaderData(i, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignHCenter), QtCore.Qt.TextAlignmentRole)
-                    
-        print self.params.name," : vytvarim sloty"
+                            
         QtCore.QObject.connect(self, QtCore.SIGNAL("itemChanged(QStandardItem *)"), self.slot_ModelChanged)                        
                 
     #MODEL CHANGED - define editable rows
@@ -80,7 +80,7 @@ class myModel(QtGui.QStandardItemModel):
             return QtCore.Qt.ItemIsEnabled        
 
         #refresh mode => NOT editable                                    
-        if(self.mode ==  MODE_REFRESH):
+        if(self.table_mode ==  MODE_REFRESH):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         
         #NOT editable items
@@ -132,7 +132,7 @@ class myModel(QtGui.QStandardItemModel):
     def slot_ModelChanged(self, item):                        
         
         #user change, no auto update
-        if((self.params.guidata.mode == GuiData.MODE_EDIT) and (self.params.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                                                                  
+        if((self.params.guidata.table_mode == GuiData.MODE_EDIT) and (self.params.guidata.user_actions == GuiData.ACTIONS_ENABLE)):                                                                  
                         
             #get dictionary with row-data, ready for DB
             tabRow = self.getRow(item.row())                                                      
@@ -141,26 +141,27 @@ class myModel(QtGui.QStandardItemModel):
             dbRow = self.table2dbRow(tabRow)
                                         
             #exist row? 
-            if (dbRow != None):                                                                            
+            if (dbRow != None): 
+                                                                                           
                 #update DB
-                #try:
-                    #print self.params.name, dbRow                                        
-                self.params.db.update_from_dict(self.params.name, dbRow)
-                #except:                
-                #    self.params.showmessage(self.params.name+" Update", "Error!")
-                #    return
+                try:                                                        
+                    self.params.db.update_from_dict(self.params.name, dbRow)
+                except:                
+                    self.params.showmessage(self.params.name+" Update", "Error!")                
                 
             #update model                                                               
             self.update()            
 
     
+    # get default row of table
     def getDefaultTableRow(self):        
         row = {}     
            
+        #empty string to all collumns
         for key in self.params.keys:            
-            row[key] = ""
-            
+            row[key] = ""            
         
+        #set id
         if row.has_key('id'):
             try:
                 row['id'] = self.params.db.getMax(self.params.name, 'id') + 1
@@ -202,13 +203,16 @@ class myModel(QtGui.QStandardItemModel):
                 #next column
                 nr_column += 1
             else:
-                print "NOT adding row ", key                    
+                print "NOT adding row ", key, row.keys()                    
                             
-    
-    
+        
+    #=======================================================================  
     # update model from DB
-    # call table-specific function <= upgrade dictionary
-    def update(self, parameter=None, value=None):
+    #=======================================================================  
+    # update() => all table
+    # update(parameter, value) => all rows with par = value
+    # update(conditions, operation) => condition[0][0]=condition[0][1] OPERATION condition[1][0]=condition[1][1] 
+    def update(self, parameter=None, value=None, conditions=None, operation=None):
                 
         self.params.guidata.user_actions = GuiData.ACTIONS_DISABLE        
                       
@@ -216,10 +220,14 @@ class myModel(QtGui.QStandardItemModel):
         self.removeRows(0, self.rowCount())  
         
         #get rows from DB
-        if (parameter == None):                
+        if ((parameter == None) and (conditions == None)):                
             rows = self.params.db.getAll(self.params.name)
-        else:
+        elif (conditions == None):
             rows = self.params.db.getParX(self.params.name, parameter, value)
+        elif (conditions!=[]):
+            rows = self.params.db.getParXX(self.params.name, conditions, operation)
+        else:
+            rows = []        
                                                     
         #add rows in table
         for row in rows:            
@@ -268,7 +276,7 @@ class myProxyModel(QtGui.QSortFilterProxyModel):
             for j in range(self.columnCount()):
                 index = self.index(i,j)
                 mystr1 = self.data(index).toString()                   
-                mystr2 = mystr1.toUtf8()                
+                mystr2 = str(mystr1.toUtf8())                
                 row.append(mystr2)            
             rows.append(row)
         return rows
@@ -288,7 +296,7 @@ class myTable():
         self.timer1s.start(1000);
         
         #MODE EDIT/REFRESH        
-        self.mode = MODE_EDIT                     
+        self.table_mode = MODE_EDIT                     
                 
         self.createSlots()
         
@@ -320,6 +328,10 @@ class myTable():
         # EXPORT BUTTON
         QtCore.QObject.connect(self.params.gui['export'], QtCore.SIGNAL("clicked()"), self.sExport)
         
+        # EXPORT WWW BUTTON
+        if (self.params.gui['export_www'] != None):
+            QtCore.QObject.connect(self.params.gui['export_www'], QtCore.SIGNAL("clicked()"), self.sExport_www)
+        
         # DELETE BUTTON -> EMPTY TABLE
         QtCore.QObject.connect(self.params.gui['delete'], QtCore.SIGNAL("clicked()"), self.sDeleteAll)
         
@@ -331,7 +343,7 @@ class myTable():
         
     #UPDATE TIMER    
     def slot_Timer1s(self):                 
-        if (self.params.guidata.mode == GuiData.MODE_REFRESH): 
+        if (self.params.guidata.table_mode == GuiData.MODE_REFRESH): 
             self.update()    #update table            
     
         # CLEAR FILTER BUTTON -> CLEAR FILTER        
@@ -350,16 +362,14 @@ class myTable():
     def sAdd(self):
         title = "Table "+self.params.name+" Add"                
         
-        row = self.model.getDefaultTableRow()
-                
-        my_id = self.params.showmessage(title,"ID: ", type="input_integer", value = row['id'])
-        
+        #get ID for default record
+        row = self.model.getDefaultTableRow()                        
+        my_id = self.params.showmessage(title,"ID: ", type="input_integer", value = row['id'])                
         if my_id == None:
             return
-                
-        res = self.params.db.getParId(self.params.name, my_id).fetchone()
-        
-        #this ID exist?
+
+        #this ID exist?                
+        res = self.params.db.getParId(self.params.name, my_id).fetchone()                
         if(res):
             self.params.showmessage(title,"Record with this ID already exist!")
             return
@@ -368,12 +378,13 @@ class myTable():
         #row = {}
         #for key in self.params['keys']:
         #    row[key] = ''
-        row['id'] = my_id
+        row['id'] = my_id        
                 
-        self.model.params.guidata.user_actions = GuiData.ACTIONS_DISABLE        
+        self.model.params.guidata.user_actions = GuiData.ACTIONS_DISABLE
+                
         #self.model.addRow(row)
-        #print "NOW", row
-        dbRow = self.model.table2dbRow(row)
+                
+        dbRow = self.model.table2dbRow(row)        
         if(dbRow != None):        
             self.params.db.insert_from_dict(self.params.name, dbRow)            
             self.params.showmessage(title,"succesfully (id="+str(my_id)+")", dialog = False)
@@ -445,12 +456,32 @@ class myTable():
         title = "Table '"+self.params.name + "' CSV Export"
          
         #export to csv file
-        #try:                        
-        self.export_csv(filename, source)                                
-        self.params.showmessage(title, "Succesfully", dialog=False)            
-        #except:            
-        #    self.params['showmessage'](title, "NOT succesfully \n\nCannot write into the file")
-                     
+        try:                        
+            self.export_csv(filename, source)                                
+            self.params.showmessage(title, "Succesfully", dialog=False)            
+        except:            
+            self.params.showmessage(title, "NOT succesfully \n\nCannot write into the file")
+               
+        
+    # EXPORT WWW    
+    # what you see, is exported    
+    def sExport_www(self, source='table'): 
+        
+        #get filename, gui dialog 
+        filename = QtGui.QFileDialog.getSaveFileName(self.params.gui['view'],"Export table "+self.params.name+" to HTML","table_"+self.params.name+".htm","HTML Files (*.htm; *.html)")                
+        if(filename == ""):
+            return              
+        
+        #title
+        title = "Table '"+self.params.name + "' HTML Export"
+         
+        #export to HTML file
+        try:                                    
+            html_page = ew_html.ewitis_html(filename, styles= ["results.css",], times=self)
+            html_page.save()                             
+            self.params.showmessage(title, "Succesfully", dialog=False)            
+        except:            
+            self.params.showmessage(title, "NOT succesfully \n\nCannot write into the file")                                     
                         
     # DELETE BUTTON          
     def sDeleteAll(self):
@@ -485,8 +516,7 @@ class myTable():
             aux_csv.save(rows)
             
     def update(self, parameter=None, value=None, selectionback=True):
-        
-        print "basic update"
+                
                     
         #get row-selection
         if(selectionback==True):
@@ -496,8 +526,8 @@ class myTable():
             except:
                 pass 
         
-        self.model.update(parameter, value)
-        
+        #update model
+        self.model.update(parameter, value)        
             
         #row-selection back
         if(selectionback==True):                           
@@ -506,6 +536,7 @@ class myTable():
             except:
                 pass
         
+        #update counter
         self.update_counter()
         
     def update_counter(self):        

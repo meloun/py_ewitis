@@ -31,13 +31,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #GUI
         QtGui.QWidget.__init__(self, parent)        
         self.ui = Ui_App.Ui_MainWindow()
-        self.ui.setupUi(self)                      
-                                                                                      
-        
-        #GUI USER
-        
-        '''status bar'''
-        self.ui.statusbar.showMessage("ok")
+        self.ui.setupUi(self)                                                                                                                          
                 
         #nastaveni prvniho dostupneho portu
         self.ui.aSetPort.setText(serial_utils.enumerate_serial_ports().next())
@@ -46,9 +40,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         # DATABASE
         #=======================================================================
         try:           
-            self.db = sqlite.sqlite_db("db/test_db.sqlite")
-        
-            '''connect to db'''  
+            self.db = sqlite.sqlite_db("db/test_db.sqlite")                
             self.db.connect()
         except:
             print "E: GUI: Database"                 
@@ -57,18 +49,21 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         #=======================================================================
         # TABLES
         #=======================================================================
-        self.GuiData = GuiData.GuiData()
+        self.GuiData = GuiData.GuiData()        
         
         self.U = UsersModel.Users( UsersModel.UsersParameters(self))                       
         self.T = TimesModel.Times( TimesModel.TimesParameters(self))        
         self.R = RunsModel.Runs( RunsModel.RunsParameters(self))
         
+        #doplneni 
+        self.T.params.tabRuns = self.R        
+        
         self.U.update()
         self.T.update()
         self.R.update()
-   
         
-
+        '''status bar'''                
+        self.showMessage("mode", self.GuiData.getMesureModeString() + " ["+self.GuiData.getRaceName()+"]", dialog=False)
         
         #=======================================================================
         # SIGNALS
@@ -86,38 +81,13 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.timesShowZero, QtCore.SIGNAL("stateChanged (int)"), self.sTimesShowZeroChanged)
                                                                          
         #COMM
-        self.ShaMem_comm = ShaMem_comm                
-                       
-        self.myManageComm = manage_comm.ManageComm(ShaMem_comm = self.ShaMem_comm) #COMM instance
-        
-        
-        
+        self.ShaMem_comm = ShaMem_comm                       
+        self.myManageComm = manage_comm.ManageComm(ShaMem_comm = self.ShaMem_comm) #COMM instance                        
         self.myManageComm.start() #start thread, 'run' flag should be 0, so this thread ends immediatelly
           
     def __del__(self):
         print "GUI: mazu instanci.."                                                              
 
-    #=======================================================================
-    # UPDATE TIMES
-    #=======================================================================    
-    # function for update table TIMES according to selection in RUNS
-    def updateTimes_old(self):         
-                         
-        #get index of selected ID (from tableRuns) 
-        rows = self.ui.RunsProxyView.selectionModel().selectedRows() #default collumn = 0
-                                      
-        #update table times with run_id
-        try: 
-            
-            #ziskani id z vybraneho radku                                         
-            self.R.run_id = self.R.proxy_model.data(rows[0]).toString()                 
-                                         
-            #get TIMES from database & add them to the table
-            self.GuiData.user_actions = GuiData.ACTIONS_DISABLE
-            self.T.update(run_id = self.R.run_id)             
-            self.GuiData.user_actions = GuiData.ACTIONS_ENABLE
-        except:
-            print "I: Times: nelze aktualizovat!"
     
     #=======================================================================
     # SHOW MESSAGE -     
@@ -145,7 +115,7 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
             
         #STATUSBAR        
         if(statusbar):
-            self.ui.statusbar.showMessage(title+" : " + message)
+            self.ui.statusbar.showMessage( unicode(title+" : " + message))
         
         return True
         
@@ -270,11 +240,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aLockMode.setChecked(False) 
         self.ui.aRefreshMode.setChecked(False)
         
-        self.GuiData.mode = GuiData.MODE_EDIT
+        self.GuiData.table_mode = GuiData.MODE_EDIT
           
-        self.T.model.mode = myModel.MODE_EDIT           
-        self.R.model.mode = myModel.MODE_EDIT
-        self.U.model.mode = myModel.MODE_EDIT
+        self.T.model.table_mode = myModel.MODE_EDIT           
+        self.R.model.table_mode = myModel.MODE_EDIT
+        self.U.model.table_mode = myModel.MODE_EDIT
         
         self.showMessage("Mode", "EDIT", dialog = False)
           
@@ -284,11 +254,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aLockMode.setChecked(False) 
         self.ui.aEditMode.setChecked(False)  
         
-        self.GuiData.mode = GuiData.MODE_REFRESH     
+        self.GuiData.table_mode = GuiData.MODE_REFRESH     
                   
-        self.R.model.mode = myModel.MODE_REFRESH
-        self.T.model.mode = myModel.MODE_REFRESH
-        self.U.model.mode = myModel.MODE_REFRESH  
+        self.R.model.table_mode = myModel.MODE_REFRESH
+        self.T.model.table_mode = myModel.MODE_REFRESH
+        self.U.model.table_mode = myModel.MODE_REFRESH  
         
         self.showMessage("Mode", "REFRESH", dialog = False)      
         
@@ -298,11 +268,11 @@ class wrapper_gui_ewitis(QtGui.QMainWindow):
         self.ui.aRefreshMode.setChecked(False) 
         self.ui.aEditMode.setChecked(False)
           
-        self.GuiData.mode = GuiData.MODE_LOCK     
+        self.GuiData.table_mode = GuiData.MODE_LOCK     
                 
-        self.R.model.mode = myModel.MODE_LOCK
-        self.T.model.mode = myModel.MODE_LOCK
-        self.U.model.mode = myModel.MODE_LOCK
+        self.R.model.table_mode = myModel.MODE_LOCK
+        self.T.model.table_mode = myModel.MODE_LOCK
+        self.U.model.table_mode = myModel.MODE_LOCK
         
         self.showMessage("Mode", "LOCK", dialog = False)
                                                                                                                                                                                  
